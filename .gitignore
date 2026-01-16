@@ -1,0 +1,11 @@
+# Compiled class file
+target
+.idea
+*.class
+*.log
+*.ctxt
+.mtj.tmp/
+hs_err_pid*
+replay_pid*
+*.old
+*~
