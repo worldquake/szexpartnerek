@@ -239,21 +239,21 @@ SELECT p.*,
        (SELECT GROUP_CONCAT(e.name, ', ')
         FROM partner_prop pp
                  JOIN int_enum e ON pp.enum_id = e.id AND e.type = 'props'
-        WHERE pp.partner_id = p.id)    AS prop,
+        WHERE pp.partner_id = p.id)    AS properties,
        -- All likes
        (SELECT GROUP_CONCAT(e.name, ', ')
         FROM partner_like pl
                  JOIN int_enum e ON pl.enum_id = e.id AND e.type = 'likes'
-        WHERE pl.partner_id = p.id)    AS like,
+        WHERE pl.partner_id = p.id)    AS likes,
        -- All massages
        (SELECT GROUP_CONCAT(e.name, ', ')
         FROM partner_massage pm
                  JOIN int_enum e ON pm.enum_id = e.id AND e.type = 'massage'
-        WHERE pm.partner_id = p.id)    AS massage,
+        WHERE pm.partner_id = p.id)    AS massages,
        -- All languages
        (SELECT GROUP_CONCAT(plang.lang, ', ')
         FROM partner_lang plang
-        WHERE plang.partner_id = p.id) AS lang,
+        WHERE plang.partner_id = p.id) AS languages,
        -- All looking
        (SELECT GROUP_CONCAT(e.name, ', ')
         FROM partner_looking plook
@@ -262,5 +262,5 @@ SELECT p.*,
        -- All open hours
        (SELECT GROUP_CONCAT(onday || ': ' || hours, ', ')
         FROM partner_open_hour poh
-        WHERE poh.partner_id = p.id)   AS open_hour
+        WHERE poh.partner_id = p.id)   AS open_hours
 FROM partner p;
