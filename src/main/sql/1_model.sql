@@ -20,6 +20,7 @@ DROP TABLE IF EXISTS partner_lang;
 DROP TABLE IF EXISTS partner_open_hour;
 DROP TABLE IF EXISTS partner_prop;
 DROP TABLE IF EXISTS partner_phone_prop;
+DROP VIEW partner_view;
 DROP TABLE IF EXISTS partner;
 DROP TABLE IF EXISTS int_enum;
 
@@ -231,3 +232,35 @@ CREATE TABLE IF NOT EXISTS partner_list
     image TEXT,
     PRIMARY KEY (tag, id)
 );
+
+CREATE VIEW partner_view AS
+SELECT p.*,
+       -- All props
+       (SELECT GROUP_CONCAT(e.name, ', ')
+        FROM partner_prop pp
+                 JOIN int_enum e ON pp.enum_id = e.id AND e.type = 'props'
+        WHERE pp.partner_id = p.id)    AS prop,
+       -- All likes
+       (SELECT GROUP_CONCAT(e.name, ', ')
+        FROM partner_like pl
+                 JOIN int_enum e ON pl.enum_id = e.id AND e.type = 'likes'
+        WHERE pl.partner_id = p.id)    AS like,
+       -- All massages
+       (SELECT GROUP_CONCAT(e.name, ', ')
+        FROM partner_massage pm
+                 JOIN int_enum e ON pm.enum_id = e.id AND e.type = 'massage'
+        WHERE pm.partner_id = p.id)    AS massage,
+       -- All languages
+       (SELECT GROUP_CONCAT(plang.lang, ', ')
+        FROM partner_lang plang
+        WHERE plang.partner_id = p.id) AS lang,
+       -- All looking
+       (SELECT GROUP_CONCAT(e.name, ', ')
+        FROM partner_looking plook
+                 JOIN int_enum e ON plook.enum_id = e.id AND e.type = 'looking'
+        WHERE plook.partner_id = p.id) AS looking,
+       -- All open hours
+       (SELECT GROUP_CONCAT(onday || ': ' || hours, ', ')
+        FROM partner_open_hour poh
+        WHERE poh.partner_id = p.id)   AS open_hour
+FROM partner p;

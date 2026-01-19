@@ -87,15 +87,13 @@ WHERE enum_id = (SELECT id FROM int_enum WHERE type = 'props' AND name = 'SZEXPA
 
 -- Partner pass update (removing unnecessary)
 update partner
+set pass=TRIM(SUBSTR(pass, INSTR(pass, '"') + 1, INSTR(SUBSTR(pass, INSTR(pass, '"') + 1), '"') - 1))
+where pass like '%"%"%';
+update partner
 set pass=null
 where pass = 'null'
    or pass like '%.hu'
    OR (name is not null and pass like name || '%');
-
-update partner
-set pass=TRIM(SUBSTR(pass, INSTR(pass, '"') + 1, INSTR(SUBSTR(pass, INSTR(pass, '"') + 1), '"') - 1))
-where pass like '%"%"%';
-
 -- Delete from partner_prop (props)
 DELETE
 FROM partner_prop
@@ -117,36 +115,3 @@ WHERE enum_id IN (SELECT id
   AND partner_id IN (SELECT partner_id
                      FROM partner_like
                      WHERE enum_id = (SELECT id FROM int_enum WHERE type = 'likes' AND name = 'CSAK_WEBCAM_SZEX'));
-
-DROP VIEW partner_view;
-CREATE VIEW partner_view AS
-SELECT p.*,
-       -- All props
-       (SELECT GROUP_CONCAT(e.name, ', ')
-        FROM partner_prop pp
-                 JOIN int_enum e ON pp.enum_id = e.id AND e.type = 'props'
-        WHERE pp.partner_id = p.id)    AS prop,
-       -- All likes
-       (SELECT GROUP_CONCAT(e.name, ', ')
-        FROM partner_like pl
-                 JOIN int_enum e ON pl.enum_id = e.id AND e.type = 'likes'
-        WHERE pl.partner_id = p.id)    AS like,
-       -- All massages
-       (SELECT GROUP_CONCAT(e.name, ', ')
-        FROM partner_massage pm
-                 JOIN int_enum e ON pm.enum_id = e.id AND e.type = 'massage'
-        WHERE pm.partner_id = p.id)    AS massage,
-       -- All languages
-       (SELECT GROUP_CONCAT(plang.lang, ', ')
-        FROM partner_lang plang
-        WHERE plang.partner_id = p.id) AS lang,
-       -- All looking
-       (SELECT GROUP_CONCAT(e.name, ', ')
-        FROM partner_looking plook
-                 JOIN int_enum e ON plook.enum_id = e.id AND e.type = 'looking'
-        WHERE plook.partner_id = p.id) AS looking,
-       -- All open hours
-       (SELECT GROUP_CONCAT(onday || ': ' || hours, ', ')
-        FROM partner_open_hour poh
-        WHERE poh.partner_id = p.id)   AS open_hour
-FROM partner p;

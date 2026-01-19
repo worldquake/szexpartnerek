@@ -13,7 +13,7 @@ SELECT p.*,
                 AND e.type = 'props'
                 AND (e.name LIKE 'HAJ_%' OR e.name LIKE '%_HAJ')
               ORDER BY e.name LIKE 'HAJ_%' DESC, e.name
-                  LIMIT 2))                                         AS hair,
+              LIMIT 2))                                         AS hair,
        -- Eye (szem): remove _SZEM postfix
        (SELECT REPLACE(e.name, '_SZEM', '')
         FROM partner_prop pp
@@ -21,7 +21,7 @@ SELECT p.*,
         WHERE pp.partner_id = p.id
           AND e.type = 'props'
           AND e.name LIKE '%_SZEM'
-                                                                       LIMIT 1)                                                AS eye,
+        LIMIT 1)                                                AS eyes,
        -- Breast (cici): remove _CICI postfix
        (SELECT REPLACE(e.name, '_CICI', '')
         FROM partner_prop pp
@@ -29,7 +29,7 @@ SELECT p.*,
         WHERE pp.partner_id = p.id
           AND e.type = 'props'
           AND e.name LIKE '%_CICI'
-        LIMIT 1)                                                AS cici,
+        LIMIT 1)                                                AS breasts,
        -- Body type (alkat): remove _ALKAT postfix
        (SELECT REPLACE(e.name, '_ALKAT', '')
         FROM partner_prop pp
@@ -86,7 +86,7 @@ SELECT p.*,
                           AND e.type = 'props'
                           AND e.name = 'NEM_LEGKONDICIONALT_LAKAS') THEN 0
            ELSE NULL
-END                                                  AS aircond,
+           END                                                  AS aircond,
        -- Smoker
        CASE
            WHEN EXISTS (SELECT 1
@@ -102,7 +102,7 @@ END                                                  AS aircond,
                           AND e.type = 'props'
                           AND e.name = 'NEM_DOHANYZOM') THEN 0
            ELSE NULL
-END                                                  AS smoker,
+           END                                                  AS smoker,
        -- SMS
        CASE
            WHEN EXISTS (SELECT 1
@@ -118,21 +118,21 @@ END                                                  AS smoker,
                           AND e.type = 'props'
                           AND e.name = 'SMSRE_NEM_VALASZOLOK') THEN 0
            ELSE NULL
-END                                                  AS sms,
-       -- hours: join *_ORARA in looking, remove postfix
-       (SELECT GROUP_CONCAT(REPLACE(e.name, '_ORARA', ''), ', ')
+           END                                                  AS sms,
+       -- length: join *_ORARA in looking, remove postfix
+       (SELECT GROUP_CONCAT(e.name, ', ')
         FROM partner_looking pl
                  JOIN int_enum e ON pl.enum_id = e.id
         WHERE pl.partner_id = p.id
           AND e.type = 'looking'
-          AND (e.name LIKE '%_ORARA' OR e.name = 'TOBB_NAPRA')) AS hours,
+          AND (e.name LIKE '%_ORARA' OR e.name = 'TOBB_NAPRA')) AS lengths,
        -- francia: join FRANCIA_* in likes, remove prefix
        (SELECT GROUP_CONCAT(REPLACE(e.name, 'FRANCIA_', ''), ', ')
         FROM partner_like pl
                  JOIN int_enum e ON pl.enum_id = e.id
         WHERE pl.partner_id = p.id
           AND e.type = 'likes'
-          AND e.name LIKE 'FRANCIA_%')                          AS francia,
+          AND e.name LIKE 'FRANCIA_%')                          AS french,
        -- place: combine (CSAK_)WEBCAM_SZEX, CSAK_NALAD, CSAK_NALAM, NALAM_NALAD from props and AUTOS_KALAND, BULIBA, BUCSUBA, CSAK_WEBCAM_SZEX from looking
        (SELECT GROUP_CONCAT(placeval, ', ')
         FROM (SELECT e.name AS placeval
@@ -263,22 +263,22 @@ SELECT p.*,
                     OR name IN ('SZEXPARTNER', 'DOMINA', 'AKTUS_VELEM_KIZART', 'MASSZAZS', 'CSAK_MASSZAZS')
                     OR name IN ('CSAK_NALAD', 'CSAK_NALAM', 'NALAM_NALAD')
                 )
-        WHERE pp.partner_id = p.id)                                                    AS prop,
+        WHERE pp.partner_id = p.id)                                                    AS properties,
        -- Likes (filter out FRANCIA_* and handled keys)
        (SELECT GROUP_CONCAT(e.name, ', ')
         FROM partner_like pl
                  JOIN int_enum e ON pl.enum_id = e.id AND e.type = 'likes'
         WHERE pl.partner_id = p.id
-          AND NOT (e.name LIKE 'FRANCIA_%' OR e.name LIKE '%WEBCAM%'))                 AS like,
+          AND NOT (e.name LIKE 'FRANCIA_%' OR e.name LIKE '%WEBCAM%'))                 AS likes,
        -- Massages
        (SELECT GROUP_CONCAT(e.name, ', ')
         FROM partner_massage pm
                  JOIN int_enum e ON pm.enum_id = e.id AND e.type = 'massage'
-        WHERE pm.partner_id = p.id)                                                    AS massage,
+        WHERE pm.partner_id = p.id)                                                    AS massages,
        -- Languages
        (SELECT GROUP_CONCAT(plang.lang, ', ')
         FROM partner_lang plang
-        WHERE plang.partner_id = p.id)                                                 AS lang,
+        WHERE plang.partner_id = p.id)                                                 AS extra_languages,
        -- Looking (filter out *_ORARA and handled keys)
        (SELECT GROUP_CONCAT(e.name, ', ')
         FROM partner_looking plook
@@ -289,7 +289,7 @@ SELECT p.*,
        -- Open hours
        (SELECT GROUP_CONCAT(onday || ': ' || hours, ', ')
         FROM partner_open_hour poh
-        WHERE poh.partner_id = p.id)                                                   AS open_hour
+        WHERE poh.partner_id = p.id)                                                   AS open_hours
 FROM partner_ext p;
 
 -- Create user_likes to use enum
