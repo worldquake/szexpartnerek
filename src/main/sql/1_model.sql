@@ -7,6 +7,8 @@ DROP TRIGGER IF EXISTS partner_massage_enum_type_check;
 DROP TRIGGER IF EXISTS partner_like_enum_type_check;
 
 -- Drop tables (children first, then parents)
+DROP TABLE IF EXISTS tmp_user_likes;
+DROP TABLE IF EXISTS user;
 DROP TABLE IF EXISTS partner_list;
 DROP TABLE IF EXISTS partner_activity;
 DROP TABLE IF EXISTS partner_img;
@@ -31,6 +33,25 @@ CREATE TABLE int_enum
     PRIMARY KEY (id, type)
 );
 
+-- Create user tables (not the advertisers, but the people who use services)
+CREATE TABLE user
+(
+    id     INTEGER PRIMARY KEY,
+    name   TEXT NOT NULL,
+    age    TEXT,
+    height INTEGER,
+    weight INTEGER,
+    size   INTEGER,
+    gender TEXT,
+    regd   DATE
+);
+
+CREATE TABLE tmp_user_likes
+(
+    user_id INTEGER NOT NULL REFERENCES user (id),
+    like    TEXT    NOT NULL,
+    PRIMARY KEY (user_id, like)
+);
 -- Main partner table
 CREATE TABLE partner
 (

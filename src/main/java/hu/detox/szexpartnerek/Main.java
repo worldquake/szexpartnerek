@@ -1,10 +1,7 @@
 package hu.detox.szexpartnerek;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import hu.detox.szexpartnerek.rl.Advertiser;
-import hu.detox.szexpartnerek.rl.AdvertiserPersister;
-import hu.detox.szexpartnerek.rl.Lista;
-import hu.detox.szexpartnerek.rl.ListaPersister;
+import hu.detox.szexpartnerek.rl.*;
 import okhttp3.Response;
 import org.apache.commons.io.IOUtils;
 
@@ -69,6 +66,15 @@ public class Main implements Callable<Integer> {
         //lista.combineAll();
         //rlDataDl(adv);
         adv.close();
+        var br = new BufferedReader(new FileReader("target/users.jsonl"));
+        try (var conn = db.getConnection();
+             UserPersister up = new UserPersister(conn)) {
+            String ln;
+            while ((ln = br.readLine()) != null) {
+                JsonNode node = Serde.OM.readTree(ln);
+                up.save(node);
+            }
+        }
         var r = new FileReader("target/listak.txt.json");
         try (var conn = db.getConnection();
              ListaPersister ap = new ListaPersister(conn)) {
