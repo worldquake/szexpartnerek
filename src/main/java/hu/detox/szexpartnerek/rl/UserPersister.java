@@ -2,6 +2,8 @@ package hu.detox.szexpartnerek.rl;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import hu.detox.szexpartnerek.Db;
+import hu.detox.szexpartnerek.Main;
+import hu.detox.szexpartnerek.Persister;
 import hu.detox.szexpartnerek.Utils;
 
 import java.io.Flushable;
@@ -12,14 +14,15 @@ import java.sql.SQLException;
 import java.sql.Types;
 import java.util.Map;
 
-public class UserPersister implements AutoCloseable, Flushable {
+public class UserPersister implements Persister, Flushable {
     private final PreparedStatement userStmt;
     private final PreparedStatement userLikesStmt;
     private final PreparedStatement userLikesDeleteStmt;
     private int batch;
     private Map<String, String> advMapping;
 
-    public UserPersister(Connection conn) throws SQLException, IOException {
+    public UserPersister() throws SQLException, IOException {
+        Connection conn = Main.APP.getConn();
         advMapping = Utils.map("src/main/resources/adv-mapping.kv");
         String userSql = "INSERT INTO user (id, name, age, height, weight, gender, regd, size) VALUES (?, ?, ?, ?, ?, ?, ?, ?) " +
                 "ON CONFLICT(id) DO UPDATE SET " +
@@ -51,7 +54,8 @@ public class UserPersister implements AutoCloseable, Flushable {
         return value.toString();
     }
 
-    public void save(JsonNode user) throws Exception {
+    @Override
+    public void save(JsonNode user) throws IOException, SQLException {
         Object idObj = getField(user, "id");
         Object nameObj = getField(user, "name");
         if (idObj == null || nameObj == null) {
@@ -129,5 +133,6 @@ public class UserPersister implements AutoCloseable, Flushable {
             throw new IOException("Unable to flush " + batch, ex);
         }
         batch = 0;
+        System.err.println("Flushed " + batch + " user");
     }
 }

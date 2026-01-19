@@ -2,6 +2,8 @@ package hu.detox.szexpartnerek.rl;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import hu.detox.szexpartnerek.Db;
+import hu.detox.szexpartnerek.Main;
+import hu.detox.szexpartnerek.Persister;
 
 import java.io.Flushable;
 import java.io.IOException;
@@ -10,18 +12,20 @@ import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.util.Iterator;
 
-public class ListaPersister implements AutoCloseable, Flushable {
+public class ListaPersister implements Persister, Flushable {
     private final PreparedStatement partnerListStmt;
     private int batch;
 
-    public ListaPersister(Connection conn) throws SQLException {
+    public ListaPersister() throws SQLException {
+        Connection conn = Main.APP.getConn();
         conn.createStatement().executeUpdate("DELETE FROM partner_list");
         this.partnerListStmt = conn.prepareStatement(
                 "INSERT OR IGNORE INTO partner_list (tag, id, name, age, image) VALUES (?, ?, ?, ?, ?)"
         );
     }
 
-    public void save(JsonNode root) throws Exception {
+    @Override
+    public void save(JsonNode root) throws IOException, SQLException {
         Iterator<String> tags = root.fieldNames();
         while (tags.hasNext()) {
             String tag = tags.next();
@@ -47,6 +51,7 @@ public class ListaPersister implements AutoCloseable, Flushable {
         } catch (SQLException ex) {
             throw new IOException("Unable to flush partner_list batch", ex);
         }
+        System.err.println("Flushed " + batch + " lists");
         batch = 0;
     }
 

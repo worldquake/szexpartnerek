@@ -2,7 +2,11 @@ package hu.detox.szexpartnerek.rl;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import hu.detox.szexpartnerek.Db;
+import hu.detox.szexpartnerek.Main;
+import hu.detox.szexpartnerek.Persister;
 
+import java.io.BufferedReader;
+import java.io.FileReader;
 import java.io.Flushable;
 import java.io.IOException;
 import java.sql.Connection;
@@ -13,7 +17,7 @@ import java.util.Arrays;
 import java.util.Iterator;
 import java.util.Properties;
 
-public class AdvertiserPersister implements AutoCloseable, Flushable {
+public class AdvertiserPersister implements Persister, Flushable {
     private final PreparedStatement enumDel;
     private final PreparedStatement enumAdd;
     private final PreparedStatement partnerStmt;
@@ -29,7 +33,8 @@ public class AdvertiserPersister implements AutoCloseable, Flushable {
     private final PreparedStatement activityStmt;
     int batch;
 
-    public AdvertiserPersister(Connection conn) throws SQLException {
+    public AdvertiserPersister() throws SQLException {
+        Connection conn = Main.APP.getConn();
         this.enumDel = conn.prepareStatement("DELETE FROM int_enum");
         this.enumAdd = conn.prepareStatement("INSERT INTO int_enum (id, parentid, type, name) VALUES (?, NULL, ?, ?)");
         this.partnerStmt = conn.prepareStatement("INSERT INTO partner (\n" +
@@ -66,10 +71,11 @@ public class AdvertiserPersister implements AutoCloseable, Flushable {
         this.activityStmt = conn.prepareStatement("INSERT OR IGNORE INTO partner_activity (partner_id, ondate, description) VALUES (?, ?, ?)");
     }
 
-    public void enumLoad(Properties props) throws SQLException {
+    public void saveProps(String file) throws IOException, SQLException {
+        Properties props = new Properties();
+        props.load(new BufferedReader(new FileReader(file)));
         enumDel.executeUpdate();
 
-        // 2. Prepare insert
         for (String key : props.stringPropertyNames()) {
             String value = props.getProperty(key);
             int eq = key.indexOf('.');
@@ -90,7 +96,8 @@ public class AdvertiserPersister implements AutoCloseable, Flushable {
         enumAdd.executeBatch();
     }
 
-    public void save(JsonNode root) throws Exception {
+    @Override
+    public void save(JsonNode root) throws IOException, SQLException {
 
         int partnerId = root.get("id").asInt();
         //System.out.println(partnerId);
@@ -162,7 +169,7 @@ public class AdvertiserPersister implements AutoCloseable, Flushable {
             phonePropStmt.addBatch();
         }
 
-        for (JsonNode n : root.get("props")) {
+        for (JsonNode n : root.get("properties")) {
             partnerPropStmt.setInt(1, partnerId);
             partnerPropStmt.setInt(2, n.asInt());
             partnerPropStmt.addBatch();
@@ -277,6 +284,7 @@ public class AdvertiserPersister implements AutoCloseable, Flushable {
         } catch (SQLException ex) {
             throw new IOException("Unable to flush " + batch, ex);
         }
+        System.err.println("Flushed " + batch + " advertisers");
         batch = 0;
     }
 }

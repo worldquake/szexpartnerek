@@ -1,7 +1,9 @@
 package hu.detox.szexpartnerek.rl;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import hu.detox.szexpartnerek.Persister;
 import hu.detox.szexpartnerek.Serde;
 import hu.detox.szexpartnerek.TrafoEngine;
 import hu.detox.szexpartnerek.Utils;
@@ -11,11 +13,24 @@ import org.jsoup.internal.StringUtil;
 import org.jsoup.nodes.Element;
 
 import java.io.*;
+import java.sql.SQLException;
 import java.util.*;
 import java.util.function.Function;
 
 public class Lista implements TrafoEngine {
-    private Set<Integer> ids = new HashSet<>();
+    public static final Lista INSTANCE = new Lista();
+    private static final TrafoEngine[] SUB = new TrafoEngine[]{Advertiser.INSTANCE};
+    private Set<Integer> ids;
+    private transient ListaPersister persister;
+
+    private Lista() {
+        try {
+            persister = new ListaPersister();
+        } catch (SQLException e) {
+            throw new ExceptionInInitializerError(e);
+        }
+        ids = new HashSet<>();
+    }
 
     @Override
     public Function<String, String> url() {
@@ -28,6 +43,21 @@ public class Lista implements TrafoEngine {
             }
             return rest;
         };
+    }
+
+    @Override
+    public Iterator<?> input(JsonNode parent) {
+        return null;
+    }
+
+    @Override
+    public TrafoEngine[] subTrafos() {
+        return SUB;
+    }
+
+    @Override
+    public Persister persister() {
+        return persister;
     }
 
     @Override
@@ -81,7 +111,7 @@ public class Lista implements TrafoEngine {
         return idChanged ? Map.of("title", title, "list", res) : null;
     }
 
-    public ObjectNode combineAll() throws IOException {
+    private ObjectNode combineAll() throws IOException {
         ObjectNode on = Serde.OM.createObjectNode();
         Map<String, String> map = Utils.map("src/main/resources/list-mapping.kv");
         try (Serde cont = new Serde(null, new BufferedReader(new FileReader(out())))) {

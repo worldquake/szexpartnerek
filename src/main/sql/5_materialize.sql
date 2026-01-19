@@ -10,7 +10,7 @@ SELECT p.*,
               FROM partner_prop pp
                        JOIN int_enum e ON pp.enum_id = e.id
               WHERE pp.partner_id = p.id
-                AND e.type = 'props'
+                AND e.type = 'properties'
                 AND (e.name LIKE 'HAJ_%' OR e.name LIKE '%_HAJ')
               ORDER BY e.name LIKE 'HAJ_%' DESC, e.name
               LIMIT 2))                                         AS hair,
@@ -19,7 +19,7 @@ SELECT p.*,
         FROM partner_prop pp
                  JOIN int_enum e ON pp.enum_id = e.id
         WHERE pp.partner_id = p.id
-          AND e.type = 'props'
+          AND e.type = 'properties'
           AND e.name LIKE '%_SZEM'
         LIMIT 1)                                                AS eyes,
        -- Breast (cici): remove _CICI postfix
@@ -27,7 +27,7 @@ SELECT p.*,
         FROM partner_prop pp
                  JOIN int_enum e ON pp.enum_id = e.id
         WHERE pp.partner_id = p.id
-          AND e.type = 'props'
+          AND e.type = 'properties'
           AND e.name LIKE '%_CICI'
         LIMIT 1)                                                AS breasts,
        -- Body type (alkat): remove _ALKAT postfix
@@ -35,7 +35,7 @@ SELECT p.*,
         FROM partner_prop pp
                  JOIN int_enum e ON pp.enum_id = e.id
         WHERE pp.partner_id = p.id
-          AND e.type = 'props'
+          AND e.type = 'properties'
           AND e.name LIKE '%_ALKAT'
         LIMIT 1)                                                AS body,
        -- Intim: remove INTIM_ prefix
@@ -43,7 +43,7 @@ SELECT p.*,
         FROM partner_prop pp
                  JOIN int_enum e ON pp.enum_id = e.id
         WHERE pp.partner_id = p.id
-          AND e.type = 'props'
+          AND e.type = 'properties'
           AND e.name LIKE 'INTIM_%'
         LIMIT 1)                                                AS intim,
        -- Orientation: HETERO, HOMO, BISZEX (no prefix/postfix)
@@ -51,7 +51,7 @@ SELECT p.*,
         FROM partner_prop pp
                  JOIN int_enum e ON pp.enum_id = e.id
         WHERE pp.partner_id = p.id
-          AND e.type = 'props'
+          AND e.type = 'properties'
           AND e.name IN ('HETERO', 'HOMO', 'BISZEX')
         LIMIT 1)                                                AS orientation,
        -- Gender: LANY, FIU, PAR, TRANSZSZEXUALIS (no prefix/postfix)
@@ -59,7 +59,7 @@ SELECT p.*,
         FROM partner_prop pp
                  JOIN int_enum e ON pp.enum_id = e.id
         WHERE pp.partner_id = p.id
-          AND e.type = 'props'
+          AND e.type = 'properties'
           AND e.name IN ('LANY', 'PAR', 'FIU', 'TRANSZSZEXUALIS')
         LIMIT 1)                                                AS gender,
        -- sex: combine DOMINA, SZEXPARTNER, AKTUS_VELEM_KIZART, MASSZAZS, CSAK_MASSZAZS from props
@@ -67,7 +67,7 @@ SELECT p.*,
         FROM partner_prop pp
                  JOIN int_enum e ON pp.enum_id = e.id
         WHERE pp.partner_id = p.id
-          AND e.type = 'props'
+          AND e.type = 'properties'
           AND (e.name LIKE '%DOMINA%'
             OR e.name IN ('SZEXPARTNER', 'AKTUS_VELEM_KIZART', 'MASSZAZS', 'CSAK_MASSZAZS'))
         ORDER BY e.name)                                        AS act,
@@ -77,13 +77,13 @@ SELECT p.*,
                         FROM partner_prop pp
                                  JOIN int_enum e ON pp.enum_id = e.id
                         WHERE pp.partner_id = p.id
-                          AND e.type = 'props'
+                          AND e.type = 'properties'
                           AND e.name = 'LEGKONDICIONALT_LAKAS') THEN 1
            WHEN EXISTS (SELECT 1
                         FROM partner_prop pp
                                  JOIN int_enum e ON pp.enum_id = e.id
                         WHERE pp.partner_id = p.id
-                          AND e.type = 'props'
+                          AND e.type = 'properties'
                           AND e.name = 'NEM_LEGKONDICIONALT_LAKAS') THEN 0
            ELSE NULL
            END                                                  AS aircond,
@@ -93,13 +93,13 @@ SELECT p.*,
                         FROM partner_prop pp
                                  JOIN int_enum e ON pp.enum_id = e.id
                         WHERE pp.partner_id = p.id
-                          AND e.type = 'props'
+                          AND e.type = 'properties'
                           AND e.name = 'DOHANYZOM') THEN 1
            WHEN EXISTS (SELECT 1
                         FROM partner_prop pp
                                  JOIN int_enum e ON pp.enum_id = e.id
                         WHERE pp.partner_id = p.id
-                          AND e.type = 'props'
+                          AND e.type = 'properties'
                           AND e.name = 'NEM_DOHANYZOM') THEN 0
            ELSE NULL
            END                                                  AS smoker,
@@ -109,13 +109,13 @@ SELECT p.*,
                         FROM partner_prop pp
                                  JOIN int_enum e ON pp.enum_id = e.id
                         WHERE pp.partner_id = p.id
-                          AND e.type = 'props'
+                          AND e.type = 'properties'
                           AND e.name = 'SMSRE_VALASZOLOK') THEN 1
            WHEN EXISTS (SELECT 1
                         FROM partner_prop pp
                                  JOIN int_enum e ON pp.enum_id = e.id
                         WHERE pp.partner_id = p.id
-                          AND e.type = 'props'
+                          AND e.type = 'properties'
                           AND e.name = 'SMSRE_NEM_VALASZOLOK') THEN 0
            ELSE NULL
            END                                                  AS sms,
@@ -146,7 +146,7 @@ SELECT p.*,
               FROM partner_prop pp
                        JOIN int_enum e ON pp.enum_id = e.id
               WHERE pp.partner_id = p.id
-                AND e.type = 'props'
+                AND e.type = 'properties'
                 AND e.name IN ('CSAK_NALAD', 'CSAK_NALAM', 'NALAM_NALAD')
               UNION ALL
               SELECT e.name AS placeval
@@ -171,13 +171,13 @@ SELECT p.*,
                                 FROM partner_prop pp
                                          JOIN int_enum e ON pp.enum_id = e.id
                                 WHERE pp.partner_id = p.id
-                                  AND e.type = 'props'
+                                  AND e.type = 'properties'
                                   AND e.name = 'BISZEX')
                        AND EXISTS (SELECT 1
                                    FROM partner_prop pp
                                             JOIN int_enum e ON pp.enum_id = e.id
                                    WHERE pp.partner_id = p.id
-                                     AND e.type = 'props'
+                                     AND e.type = 'properties'
                                      AND e.name = 'PAR')
                        THEN 'NOT, FERFIT'
                    ELSE NULL
@@ -189,13 +189,13 @@ SELECT p.*,
                                 FROM partner_prop pp
                                          JOIN int_enum e ON pp.enum_id = e.id
                                 WHERE pp.partner_id = p.id
-                                  AND e.type = 'props'
+                                  AND e.type = 'properties'
                                   AND e.name = 'HOMO')
                        AND EXISTS (SELECT 1
                                    FROM partner_prop pp
                                             JOIN int_enum e ON pp.enum_id = e.id
                                    WHERE pp.partner_id = p.id
-                                     AND e.type = 'props'
+                                     AND e.type = 'properties'
                                      AND e.name = 'FIU')
                        THEN 'FERFIT'
                    -- HOMO + (LANY vagy TRANSZSZEXUALIS) -> lanyt
@@ -203,13 +203,13 @@ SELECT p.*,
                                 FROM partner_prop pp
                                          JOIN int_enum e ON pp.enum_id = e.id
                                 WHERE pp.partner_id = p.id
-                                  AND e.type = 'props'
+                                  AND e.type = 'properties'
                                   AND e.name = 'HOMO')
                        AND EXISTS (SELECT 1
                                    FROM partner_prop pp
                                             JOIN int_enum e ON pp.enum_id = e.id
                                    WHERE pp.partner_id = p.id
-                                     AND e.type = 'props'
+                                     AND e.type = 'properties'
                                      AND e.name IN ('LANY', 'TRANSZSZEXUALIS'))
                        THEN 'NOT'
                    -- HETERO + FIU -> lanyt
@@ -217,13 +217,13 @@ SELECT p.*,
                                 FROM partner_prop pp
                                          JOIN int_enum e ON pp.enum_id = e.id
                                 WHERE pp.partner_id = p.id
-                                  AND e.type = 'props'
+                                  AND e.type = 'properties'
                                   AND e.name = 'HETERO')
                        AND EXISTS (SELECT 1
                                    FROM partner_prop pp
                                             JOIN int_enum e ON pp.enum_id = e.id
                                    WHERE pp.partner_id = p.id
-                                     AND e.type = 'props'
+                                     AND e.type = 'properties'
                                      AND e.name = 'FIU')
                        THEN 'NOT'
                    -- HETERO + (LANY vagy TRANSZSZEXUALIS) -> fiut
@@ -231,13 +231,13 @@ SELECT p.*,
                                 FROM partner_prop pp
                                          JOIN int_enum e ON pp.enum_id = e.id
                                 WHERE pp.partner_id = p.id
-                                  AND e.type = 'props'
+                                  AND e.type = 'properties'
                                   AND e.name = 'HETERO')
                        AND EXISTS (SELECT 1
                                    FROM partner_prop pp
                                             JOIN int_enum e ON pp.enum_id = e.id
                                    WHERE pp.partner_id = p.id
-                                     AND e.type = 'props'
+                                     AND e.type = 'properties'
                                      AND e.name IN ('LANY', 'TRANSZSZEXUALIS'))
                        THEN 'FERFIT'
                    ELSE NULL
@@ -250,7 +250,7 @@ SELECT p.*,
        -- Props
        (SELECT GROUP_CONCAT(e.name, ', ')
         FROM partner_prop pp
-                 JOIN int_enum e ON pp.enum_id = e.id AND e.type = 'props'
+                 JOIN int_enum e ON pp.enum_id = e.id AND e.type = 'properties'
             AND NOT (
                 name LIKE '%_HAJ' OR name LIKE 'HAJ_%'
                     OR name LIKE '%_SZEM' OR name LIKE '%_CICI'

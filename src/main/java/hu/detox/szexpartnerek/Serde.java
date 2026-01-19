@@ -1,5 +1,6 @@
 package hu.detox.szexpartnerek;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import okhttp3.*;
 import org.jsoup.internal.StringUtil;
@@ -20,13 +21,14 @@ public class Serde implements Closeable, Flushable {
         out = o;
     }
 
-    public boolean serialize(Response response, Function<String, ?> trafo) throws IOException {
+    public JsonNode serialize(Response response, Function<String, ?> trafo) throws IOException {
         if (trafo == null) {
             trafo = TOSTR;
         }
         var obj = trafo.apply(response.body().string());
-        if (obj == null) return false;
-        var body = OM.valueToTree(obj).toString();
+        if (obj == null) return null;
+        JsonNode bodyNode = OM.valueToTree(obj);
+        var body = bodyNode.toString();
         List<String> heads = new LinkedList<>();
         for (String name : response.headers().names()) {
             for (String value : response.headers(name)) {
@@ -42,7 +44,7 @@ public class Serde implements Closeable, Flushable {
         }
         out.println(body);
         out.flush();
-        return true;
+        return bodyNode;
     }
 
     public Response next() throws IOException {

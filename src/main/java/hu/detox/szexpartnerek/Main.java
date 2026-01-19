@@ -1,25 +1,42 @@
 package hu.detox.szexpartnerek;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import hu.detox.szexpartnerek.rl.*;
+import hu.detox.szexpartnerek.rl.Advertiser;
+import hu.detox.szexpartnerek.rl.Lista;
+import hu.detox.szexpartnerek.rl.New;
 import okhttp3.Response;
 import org.apache.commons.io.IOUtils;
 
 import java.io.*;
 import java.net.URL;
+import java.sql.Connection;
+import java.sql.SQLException;
 import java.util.Arrays;
-import java.util.Properties;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.function.Function;
 
-public class Main implements Callable<Integer> {
-    private static final Main APP = new Main();
+public class Main implements Callable<Integer>, AutoCloseable {
+    public static final Main APP = new Main();
     private Http rl = new Http("https://rosszlanyok.hu/");
-    private Db db = new Db(new File("target/data/db.sqlite3"));
+    private static Db DB = new Db(new File("target/data/db.sqlite3"));
+    private transient Set<AutoCloseable> closeables = new HashSet<>();
+    private transient Connection connection;
 
     public static void main(String[] args) throws Exception {
-        Integer result = APP.call();
-        System.out.println(result == null ? 0 : result);
+        try {
+            APP.connection = DB.getConnection();
+            Integer result = APP.call();
+            System.out.println(result == null ? 0 : result);
+        } finally {
+            APP.close();
+        }
+    }
+
+    public Connection getConn() {
+        return connection;
     }
 
     private void test(Function<String, ?> trafo) throws IOException {
@@ -28,9 +45,9 @@ public class Main implements Callable<Integer> {
         System.out.println(Serde.OM.valueToTree(res));
     }
 
-    public void trafoAll(PrintStream ps, TrafoEngine trafo, String... urls) throws IOException {
+    public void trafoAll(PrintStream ps, TrafoEngine engine, String... urls) throws IOException, SQLException {
         String typ = null;
-        int page = trafo.page();
+        int page = engine.page();
         int cpage;
         if (page > 0) {
             if (page == 1) typ = "page=";
@@ -45,15 +62,23 @@ public class Main implements Callable<Integer> {
                     String curl = url + (typ == null ? "" : "&" + typ + cpage);
                     var resp = rl.get(curl);
                     System.err.println("Current is " + curl);
-                    if (!serde.serialize(resp, trafo) || page == 0) {
+                    JsonNode bodyNode = serde.serialize(resp, engine);
+                    if (bodyNode == null) {
                         break;
                     }
+                    Persister p = engine.persister();
+                    if (p != null) p.save(bodyNode);
+                    TrafoEngine[] tes = engine.subTrafos();
+                    if (tes != null) for (TrafoEngine ste : tes) {
+                        rlDataDl(ste, bodyNode);
+                    }
+                    if (page == 0) break;
                     cpage++;
                 }
             }
         } finally {
             serde.flush();
-            if (trafo instanceof Flushable fl) {
+            if (engine instanceof Flushable fl) {
                 fl.flush();
             }
         }
@@ -61,47 +86,13 @@ public class Main implements Callable<Integer> {
 
     @Override
     public Integer call() throws Exception {
-        var lista = new Lista();
-        Advertiser adv = new Advertiser();
-        //lista.combineAll();
-        //rlDataDl(adv);
-        adv.close();
-        var br = new BufferedReader(new FileReader("target/users.jsonl"));
-        try (var conn = db.getConnection();
-             UserPersister up = new UserPersister(conn)) {
-            String ln;
-            while ((ln = br.readLine()) != null) {
-                JsonNode node = Serde.OM.readTree(ln);
-                up.save(node);
-            }
-        }
-        var r = new FileReader("target/listak.txt.json");
-        try (var conn = db.getConnection();
-             ListaPersister ap = new ListaPersister(conn)) {
-            JsonNode node = Serde.OM.readTree(r);
-            ap.save(node);
-        }
-        r = new FileReader("target/partnerek.txt");
-        try (var conn = db.getConnection();
-             AdvertiserPersister ap = new AdvertiserPersister(conn);
-             Serde serde = new Serde(null, new BufferedReader(r))) {
-            Response resp;
-            Properties props = new Properties();
-            props.load(new BufferedReader(new FileReader("src/main/resources/enums.properties")));
-            ap.enumLoad(props);
-            while ((resp = serde.next()) != null) {
-                JsonNode n = Serde.OM.readTree(resp.body().string());
-                ap.save(n);
-            }
-        }
+        rlDataDl(New.INSTANCE, null);
         return 0;
     }
 
-    private void refreshAll() throws IOException {
-        rlDataDl(new Advertiser());
-        Lista lista = new Lista();
-        rlDataDl(lista);
-        lista.combineAll();
+    private void refreshFromFile() throws SQLException, IOException {
+        rlDataDl(Advertiser.INSTANCE, null);
+        rlDataDl(Lista.INSTANCE, null);
     }
 
     public void load() throws Exception {
@@ -114,26 +105,52 @@ public class Main implements Callable<Integer> {
         serde.close();
     }
 
-    public void rlDataDl(TrafoEngine any) throws IOException {
+    public void rlDataDl(TrafoEngine engine, JsonNode parent) throws IOException, SQLException {
         boolean cont = true;
         String[] arr = new String[10];
         String ln;
-        PrintStream ps = new PrintStream(new FileOutputStream(any.out()));
-        try (BufferedReader br = new BufferedReader(new FileReader(any.in()))) {
+        PrintStream ps = new PrintStream(new FileOutputStream(engine.out(), true));
+        BufferedReader br = null;
+        try {
+            File in = engine.in();
+            Iterator<?> ini = parent == null ? null : engine.input(parent);
+            br = parent != null || in == null ? null : new BufferedReader(new FileReader(engine.in()));
             while (cont) {
                 Arrays.fill(arr, null);
-                for (int i = 0; i < 10; i++) {
-                    ln = br.readLine();
-                    if (ln == null) {
-                        cont = false;
-                        break;
+                if (br == null && ini == null) {
+                    arr[0] = "";
+                    cont = false;
+                } else {
+                    for (int i = 0; i < 10; i++) {
+                        ln = null;
+                        if (br != null) ln = br.readLine();
+                        else if (ini.hasNext()) {
+                            Object o = ini.next();
+                            ln = o instanceof JsonNode jn ? jn.asText() : o.toString();
+                        }
+                        if (ln == null) {
+                            cont = false;
+                            break;
+                        }
+                        arr[i] = engine.url().apply(ln);
                     }
-                    arr[i] = any.url().apply(ln);
                 }
-                trafoAll(ps, any, arr);
+                trafoAll(ps, engine, arr);
             }
         } finally {
+            if (br != null) br.close();
             ps.close();
+            closeables.add(engine);
+        }
+    }
+
+    @Override
+    public void close() throws Exception {
+        for (AutoCloseable c : closeables) {
+            c.close();
+        }
+        if (connection != null) {
+            connection.close();
         }
     }
 }

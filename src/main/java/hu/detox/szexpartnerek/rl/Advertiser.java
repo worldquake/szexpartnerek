@@ -3,6 +3,7 @@ package hu.detox.szexpartnerek.rl;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import hu.detox.szexpartnerek.Persister;
 import hu.detox.szexpartnerek.Serde;
 import hu.detox.szexpartnerek.TrafoEngine;
 import hu.detox.szexpartnerek.Utils;
@@ -15,12 +16,14 @@ import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
 import java.io.*;
+import java.sql.SQLException;
 import java.util.*;
 import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-public class Advertiser implements TrafoEngine, Closeable, Flushable {
+public class Advertiser implements TrafoEngine, Flushable {
+    public static final Advertiser INSTANCE = new Advertiser();
     private static final String EMAILP = "mailto:";
     private static final String DATEP = "\\d{4}-\\d{2}-\\d{2}";
     private static final String ENUMS = "src/main/resources/enums.properties";
@@ -29,7 +32,9 @@ public class Advertiser implements TrafoEngine, Closeable, Flushable {
     private static final Pattern LOOKING_AGE = Pattern.compile("(\\d+)\\D*(felett)?\\D*(\\d+)?\\D*(alatt)?");
     private static final Pattern READING = Pattern.compile("(\\d+) levél, (\\d+) olvasatlan");
     private static final Pattern MEASUERS = Pattern.compile("(\\d+\\+?)\\s*(éves|kg|mell|derék|csípő|cm)");
-    private final Map.Entry<String, Properties> props = new AbstractMap.SimpleEntry<>("props", new Properties());
+
+    private transient AdvertiserPersister persister;
+    private final Map.Entry<String, Properties> props = new AbstractMap.SimpleEntry<>("properties", new Properties());
     private final Map.Entry<String, Properties> massages = new AbstractMap.SimpleEntry<>("massage", new Properties());
     private final Map.Entry<String, Properties> likes = new AbstractMap.SimpleEntry<>("likes", new Properties());
     private final Map.Entry<String, Properties> lookings = new AbstractMap.SimpleEntry<>("looking", new Properties());
@@ -40,19 +45,24 @@ public class Advertiser implements TrafoEngine, Closeable, Flushable {
     private Map<String, String> looking;
     private Map<String, String> massageReverse = new HashMap<>();
 
-    public Advertiser() throws IOException {
-        loadEnums();
-        map = Utils.map("src/main/resources/adv-mapping.kv");
-        massage = Utils.map("src/main/resources/massage-mapping.kv");
-        looking = Utils.map("src/main/resources/looking-mapping.kv");
-        for (Map.Entry<String, String> me : massage.entrySet()) {
-            for (String altm : me.getValue().split(",")) {
-                massageReverse.put(altm, me.getKey());
+    private Advertiser() {
+        try {
+            persister = new AdvertiserPersister();
+            loadEnums();
+            map = Utils.map("src/main/resources/adv-mapping.kv");
+            massage = Utils.map("src/main/resources/massage-mapping.kv");
+            looking = Utils.map("src/main/resources/looking-mapping.kv");
+            for (Map.Entry<String, String> me : massage.entrySet()) {
+                for (String altm : me.getValue().split(",")) {
+                    massageReverse.put(altm, me.getKey());
+                }
             }
-        }
-        Map<String, String> lm = Utils.map("src/main/resources/list-mapping.kv");
-        for (Map.Entry<String, String> me : lm.entrySet()) {
-            addProp(props, null, null, Utils.normalize(me.getValue()));
+            Map<String, String> lm = Utils.map("src/main/resources/list-mapping.kv");
+            for (Map.Entry<String, String> me : lm.entrySet()) {
+                addProp(props, null, null, Utils.normalize(me.getValue()));
+            }
+        } catch (IOException | SQLException ex) {
+            throw new ExceptionInInitializerError(ex);
         }
     }
 
@@ -64,6 +74,32 @@ public class Advertiser implements TrafoEngine, Closeable, Flushable {
     @Override
     public Function<String, String> url() {
         return s -> "rosszlanyok.php?pid=szexpartner-data&id=" + s + "&instantStat=0";
+    }
+
+    @Override
+    public Iterator<?> input(JsonNode parent) {
+        ArrayNode an = (ArrayNode) parent.get(New.PARTNERS);
+        if (an != null) {
+            return an.iterator();
+        } else {
+            ArrayList<Integer> res = new ArrayList<>(2000);
+            for (JsonNode ian : parent) {
+                for (JsonNode ien : ian) {
+                    res.add(ien.get("id").asInt());
+                }
+            }
+            return res.iterator();
+        }
+    }
+
+    @Override
+    public TrafoEngine[] subTrafos() {
+        return null;
+    }
+
+    @Override
+    public Persister persister() {
+        return persister;
     }
 
     @Override
@@ -136,6 +172,7 @@ public class Advertiser implements TrafoEngine, Closeable, Flushable {
             res = Integer.parseInt((String) map.getValue().computeIfAbsent(map.getKey() + "." + prp,
                     k -> {
                         changedProps++;
+                        System.err.println("** Property " + map.getKey() + "." + prp + " added");
                         return "" + map.getValue().size();
                     }));
             if (arr != null) {
@@ -261,7 +298,7 @@ public class Advertiser implements TrafoEngine, Closeable, Flushable {
         for (String prop : txt.split("[,⚠️]\\s*")) {
             addProp(props, propsArr, null, prop);
         }
-        result.set("props", propsArr);
+        result.set("properties", propsArr);
         return loc;
     }
 
@@ -510,10 +547,6 @@ public class Advertiser implements TrafoEngine, Closeable, Flushable {
         return result;
     }
 
-    public void close() throws IOException {
-        flush();
-    }
-
     @Override
     public void flush() throws IOException {
         if (changedProps == 0) return;
@@ -523,6 +556,11 @@ public class Advertiser implements TrafoEngine, Closeable, Flushable {
             lookings.getValue().store(fos, "What the advertiser can accept");
             answers.getValue().store(fos, "Answers given to common questions");
             massages.getValue().store(fos, "Advertiser supported massages");
+        }
+        try {
+            persister.saveProps(ENUMS);
+        } catch (SQLException ex) {
+            throw new IOException(ex);
         }
         changedProps = 0;
     }

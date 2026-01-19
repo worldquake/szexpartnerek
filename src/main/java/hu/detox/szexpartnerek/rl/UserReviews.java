@@ -7,22 +7,14 @@ import hu.detox.szexpartnerek.TrafoEngine;
 import org.jsoup.internal.StringUtil;
 
 import java.io.File;
-import java.io.IOException;
-import java.sql.SQLException;
 import java.util.Iterator;
 import java.util.function.Function;
 
-public class User implements TrafoEngine {
-    public static final User INSTANCE = new User();
-    private static final TrafoEngine[] SUB = new TrafoEngine[]{UserReviews.INSTANCE};
-    private transient UserPersister persister;
+public class UserReviews implements TrafoEngine {
+    public static final UserReviews INSTANCE = new UserReviews();
 
-    private User() {
-        try {
-            persister = new UserPersister();
-        } catch (SQLException | IOException e) {
-            throw new ExceptionInInitializerError(e);
-        }
+    private UserReviews() {
+        // Singleton
     }
 
     @Override
@@ -32,7 +24,7 @@ public class User implements TrafoEngine {
                 rest = "707194";
             }
             if (StringUtil.isNumeric(rest)) {
-                rest = "rosszlanyok.php?pid=user-data&id=" + rest;
+                rest = "4layer/user_left_beszamolo.php?id=" + rest + "&status=accepted";
             }
             return rest;
         };
@@ -49,12 +41,12 @@ public class User implements TrafoEngine {
 
     @Override
     public TrafoEngine[] subTrafos() {
-        return SUB;
+        return null;
     }
 
     @Override
     public Persister persister() {
-        return persister;
+        return null;
     }
 
     @Override
@@ -69,7 +61,7 @@ public class User implements TrafoEngine {
 
     @Override
     public int page() {
-        return 0;
+        return 25;
     }
 
     @Override

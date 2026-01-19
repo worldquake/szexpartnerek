@@ -29,7 +29,7 @@ CREATE TABLE int_enum
 (
     id       TINYINT NOT NULL,
     parentid TINYINT REFERENCES int_enum (id) ON DELETE SET NULL,
-    type     TEXT    NOT NULL, -- e.g. 'props', 'likes', 'looking', 'massage', 'answers'
+    type     TEXT    NOT NULL, -- e.g. 'properties', 'likes', 'looking', 'massage', 'answers'
     name     TEXT    NOT NULL,
     PRIMARY KEY (id, type)
 );
@@ -171,7 +171,7 @@ CREATE TRIGGER partner_prop_enum_type_check
     FOR EACH ROW
 BEGIN
     SELECT CASE
-               WHEN (SELECT count(*) FROM int_enum WHERE id = NEW.enum_id AND type = 'props') != 1
+               WHEN (SELECT count(*) FROM int_enum WHERE id = NEW.enum_id AND type = 'properties') != 1
                    THEN RAISE(ABORT, 'partner_prop: attempted to insert enum_id not found or not unique for type=props')
                END;
 END;
@@ -238,7 +238,7 @@ SELECT p.*,
        -- All props
        (SELECT GROUP_CONCAT(e.name, ', ')
         FROM partner_prop pp
-                 JOIN int_enum e ON pp.enum_id = e.id AND e.type = 'props'
+                 JOIN int_enum e ON pp.enum_id = e.id AND e.type = 'properties'
         WHERE pp.partner_id = p.id)    AS properties,
        -- All likes
        (SELECT GROUP_CONCAT(e.name, ', ')
