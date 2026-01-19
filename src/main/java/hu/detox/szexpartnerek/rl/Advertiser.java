@@ -24,9 +24,10 @@ import java.util.regex.Pattern;
 
 public class Advertiser implements TrafoEngine, Flushable {
     public static final Advertiser INSTANCE = new Advertiser();
+    public static final String ENUMS = "src/main/resources/enums.properties";
+
     private static final String EMAILP = "mailto:";
     private static final String DATEP = "\\d{4}-\\d{2}-\\d{2}";
-    private static final String ENUMS = "src/main/resources/enums.properties";
     private static final Pattern IDP = Pattern.compile("(id=|member/|adatlap/)([0-9]+)");
     private static final Pattern DATEF = Pattern.compile(DATEP);
     private static final Pattern LOOKING_AGE = Pattern.compile("(\\d+)\\D*(felett)?\\D*(\\d+)?\\D*(alatt)?");
@@ -39,7 +40,7 @@ public class Advertiser implements TrafoEngine, Flushable {
     private final Map.Entry<String, Properties> likes = new AbstractMap.SimpleEntry<>("likes", new Properties());
     private final Map.Entry<String, Properties> lookings = new AbstractMap.SimpleEntry<>("looking", new Properties());
     private final Map.Entry<String, Properties> answers = new AbstractMap.SimpleEntry<>("answers", new Properties());
-    private int changedProps;
+    private Properties addedProps = new Properties();
     private Map<String, String> map;
     private Map<String, String> massage;
     private Map<String, String> looking;
@@ -81,15 +82,16 @@ public class Advertiser implements TrafoEngine, Flushable {
         ArrayNode an = (ArrayNode) parent.get(New.PARTNERS);
         if (an != null) {
             return an.iterator();
-        } else {
+        } else if (parent instanceof ObjectNode on) {
             ArrayList<Integer> res = new ArrayList<>(2000);
-            for (JsonNode ian : parent) {
+            for (JsonNode ian : on) {
                 for (JsonNode ien : ian) {
-                    res.add(ien.get("id").asInt());
+                    res.add(ien.get(0).asInt());
                 }
             }
             return res.iterator();
         }
+        return null;
     }
 
     @Override
@@ -171,9 +173,15 @@ public class Advertiser implements TrafoEngine, Flushable {
         if (prp != null) {
             res = Integer.parseInt((String) map.getValue().computeIfAbsent(map.getKey() + "." + prp,
                     k -> {
-                        changedProps++;
+                        String val = "" + map.getValue().size();
+                        addedProps.put(k, val);
+                        try {
+                            persister.addProps(addedProps);
+                        } catch (IOException | SQLException ex) {
+                            throw new IllegalArgumentException(ex);
+                        }
                         System.err.println("** Property " + map.getKey() + "." + prp + " added");
-                        return "" + map.getValue().size();
+                        return val;
                     }));
             if (arr != null) {
                 boolean alreadyPresent = false;
@@ -549,7 +557,7 @@ public class Advertiser implements TrafoEngine, Flushable {
 
     @Override
     public void flush() throws IOException {
-        if (changedProps == 0) return;
+        if (addedProps.isEmpty()) return;
         try (FileOutputStream fos = new FileOutputStream(ENUMS)) {
             props.getValue().store(fos, "Properties of advertisers");
             likes.getValue().store(fos, "Likes and preferences of services of advertisers");
@@ -557,11 +565,6 @@ public class Advertiser implements TrafoEngine, Flushable {
             answers.getValue().store(fos, "Answers given to common questions");
             massages.getValue().store(fos, "Advertiser supported massages");
         }
-        try {
-            persister.saveProps(ENUMS);
-        } catch (SQLException ex) {
-            throw new IOException(ex);
-        }
-        changedProps = 0;
+        addedProps.clear();
     }
 }

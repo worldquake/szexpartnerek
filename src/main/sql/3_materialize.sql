@@ -1,5 +1,5 @@
--- Create partner to combine enums
-DROP VIEW partner_ext_view;
+-- Partner related extensions
+DROP VIEW IF EXISTS partner_ext_view;
 DROP TABLE IF EXISTS partner_ext;
 
 CREATE TABLE partner_ext AS
@@ -292,10 +292,11 @@ SELECT p.*,
         WHERE poh.partner_id = p.id)                                                   AS open_hours
 FROM partner_ext p;
 
--- Create user_likes to use enum
+-- Create user_likes related extensions
 DROP VIEW IF EXISTS user_likes_view;
 DROP VIEW IF EXISTS user_view;
 DROP TABLE IF EXISTS user_likes;
+
 CREATE TABLE user_likes
 (
     user_id INTEGER NOT NULL REFERENCES user (id),
@@ -306,6 +307,8 @@ INSERT INTO user_likes (user_id, like_id)
 SELECT ul.user_id, ie.id
 FROM tmp_user_likes ul
          JOIN int_enum ie ON ie.type = 'likes' AND ie.name = ul.like;
+
+
 CREATE VIEW user_likes_view AS
 SELECT user_id,
        GROUP_CONCAT(ie.name, ', ') AS likes

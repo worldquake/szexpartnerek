@@ -1,18 +1,14 @@
 package hu.detox.szexpartnerek.rl;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.node.ArrayNode;
-import com.fasterxml.jackson.databind.node.ObjectNode;
 import hu.detox.szexpartnerek.Persister;
-import hu.detox.szexpartnerek.Serde;
 import hu.detox.szexpartnerek.TrafoEngine;
-import hu.detox.szexpartnerek.Utils;
-import okhttp3.Response;
 import org.jsoup.Jsoup;
 import org.jsoup.internal.StringUtil;
 import org.jsoup.nodes.Element;
 
-import java.io.*;
+import java.io.File;
+import java.io.IOException;
 import java.sql.SQLException;
 import java.util.*;
 import java.util.function.Function;
@@ -26,7 +22,7 @@ public class Lista implements TrafoEngine {
     private Lista() {
         try {
             persister = new ListaPersister();
-        } catch (SQLException e) {
+        } catch (SQLException | IOException e) {
             throw new ExceptionInInitializerError(e);
         }
         ids = new HashSet<>();
@@ -62,7 +58,7 @@ public class Lista implements TrafoEngine {
 
     @Override
     public File in() {
-        return new File("src/main/resources/listak.txt");
+        return new File("src/main/resources/lists.txt");
     }
 
     @Override
@@ -73,7 +69,7 @@ public class Lista implements TrafoEngine {
 
     @Override
     public File out() {
-        return new File("target/listak.txt");
+        return new File("target/lists.txt");
     }
 
     @Override
@@ -109,29 +105,5 @@ public class Lista implements TrafoEngine {
             ids.clear();
         }
         return idChanged ? Map.of("title", title, "list", res) : null;
-    }
-
-    private ObjectNode combineAll() throws IOException {
-        ObjectNode on = Serde.OM.createObjectNode();
-        Map<String, String> map = Utils.map("src/main/resources/list-mapping.kv");
-        try (Serde cont = new Serde(null, new BufferedReader(new FileReader(out())))) {
-            Response r;
-            while ((r = cont.next()) != null) {
-                ObjectNode n = (ObjectNode) Serde.OM.readTree(r.body().string());
-                ArrayNode ian = (ArrayNode) n.get("list");
-                String tit = n.get("title").asText();
-                tit = Utils.toEnumLike(map.getOrDefault(tit, tit));
-                ArrayNode can = (ArrayNode) on.get(tit);
-                if (can == null) {
-                    can = Serde.OM.createArrayNode();
-                    on.put(tit, can);
-                }
-                can.addAll(ian);
-            }
-        }
-        try (PrintStream ps = new PrintStream(out().getPath() + ".json")) {
-            Serde.OM.writeValue(ps, on);
-        }
-        return on;
     }
 }

@@ -96,7 +96,6 @@ FROM partner_prop
 WHERE enum_id IN (SELECT id
                   FROM int_enum
                   WHERE type = 'properties'
-                  WHERE type = 'properties'
                     AND name IN ('NALAM_NALAD', 'CSAK_NALAD', 'CSAK_NALAM'))
   AND partner_id IN (SELECT partner_id
                      FROM partner_like

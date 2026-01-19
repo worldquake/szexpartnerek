@@ -9,15 +9,13 @@ import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.Flushable;
 import java.io.IOException;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.SQLException;
-import java.sql.Types;
+import java.sql.*;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.Properties;
 
 public class AdvertiserPersister implements Persister, Flushable {
+    private final PreparedStatement enumCount;
     private final PreparedStatement enumDel;
     private final PreparedStatement enumAdd;
     private final PreparedStatement partnerStmt;
@@ -31,12 +29,19 @@ public class AdvertiserPersister implements Persister, Flushable {
     private final PreparedStatement likeStmt;
     private final PreparedStatement imgStmt;
     private final PreparedStatement activityStmt;
-    int batch;
+    private int batch;
 
-    public AdvertiserPersister() throws SQLException {
+    public AdvertiserPersister() throws SQLException, IOException {
         Connection conn = Main.APP.getConn();
         this.enumDel = conn.prepareStatement("DELETE FROM int_enum");
         this.enumAdd = conn.prepareStatement("INSERT INTO int_enum (id, parentid, type, name) VALUES (?, NULL, ?, ?)");
+        this.enumCount = conn.prepareStatement("SELECT count(*) FROM int_enum");
+        try (ResultSet rs = enumCount.executeQuery()) {
+            int enums = -1;
+            if (rs.next()) enums = rs.getInt(1);
+            if (enums == 0) resetProps();
+        }
+
         this.partnerStmt = conn.prepareStatement("INSERT INTO partner (\n" +
                 "    id, call_number, name, pass, about, active_info, expect, age, height, weight, breast, waist, hips, city, location_extra, latitude, longitude, looking_age_min, looking_age_max\n" +
                 ") VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)\n" +
@@ -71,11 +76,7 @@ public class AdvertiserPersister implements Persister, Flushable {
         this.activityStmt = conn.prepareStatement("INSERT OR IGNORE INTO partner_activity (partner_id, ondate, description) VALUES (?, ?, ?)");
     }
 
-    public void saveProps(String file) throws IOException, SQLException {
-        Properties props = new Properties();
-        props.load(new BufferedReader(new FileReader(file)));
-        enumDel.executeUpdate();
-
+    public void addProps(Properties props) throws IOException, SQLException {
         for (String key : props.stringPropertyNames()) {
             String value = props.getProperty(key);
             int eq = key.indexOf('.');
@@ -94,6 +95,13 @@ public class AdvertiserPersister implements Persister, Flushable {
             enumAdd.addBatch();
         }
         enumAdd.executeBatch();
+    }
+
+    public void resetProps() throws IOException, SQLException {
+        Properties props = new Properties();
+        props.load(new BufferedReader(new FileReader(Advertiser.ENUMS)));
+        enumDel.executeUpdate();
+        addProps(props);
     }
 
     @Override
@@ -251,6 +259,7 @@ public class AdvertiserPersister implements Persister, Flushable {
     @Override
     public void close() throws SQLException, IOException {
         flush();
+        if (enumCount != null) enumCount.close();
         if (partnerStmt != null) partnerStmt.close();
         if (phonePropStmt != null) phonePropStmt.close();
         if (enumDel != null) enumDel.close();

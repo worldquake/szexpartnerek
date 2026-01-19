@@ -3,7 +3,6 @@ package hu.detox.szexpartnerek;
 import com.fasterxml.jackson.databind.JsonNode;
 import hu.detox.szexpartnerek.rl.Advertiser;
 import hu.detox.szexpartnerek.rl.Lista;
-import hu.detox.szexpartnerek.rl.New;
 import okhttp3.Response;
 import org.apache.commons.io.IOUtils;
 
@@ -49,6 +48,7 @@ public class Main implements Callable<Integer>, AutoCloseable {
         String typ = null;
         int page = engine.page();
         int cpage;
+        Persister p = engine.persister();
         if (page > 0) {
             if (page == 1) typ = "page=";
             else typ = "offset=";
@@ -66,7 +66,6 @@ public class Main implements Callable<Integer>, AutoCloseable {
                     if (bodyNode == null) {
                         break;
                     }
-                    Persister p = engine.persister();
                     if (p != null) p.save(bodyNode);
                     TrafoEngine[] tes = engine.subTrafos();
                     if (tes != null) for (TrafoEngine ste : tes) {
@@ -86,7 +85,8 @@ public class Main implements Callable<Integer>, AutoCloseable {
 
     @Override
     public Integer call() throws Exception {
-        rlDataDl(New.INSTANCE, null);
+        //rlDataDl(New.INSTANCE, null);
+        rlDataDl(Lista.INSTANCE, null);
         return 0;
     }
 
@@ -139,6 +139,7 @@ public class Main implements Callable<Integer>, AutoCloseable {
             }
         } finally {
             if (br != null) br.close();
+            if (engine instanceof Flushable fle) fle.flush();
             ps.close();
             closeables.add(engine);
         }
