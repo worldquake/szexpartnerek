@@ -15,10 +15,16 @@ public class Serde implements Closeable, Flushable {
     private static final Function<String, Object> TOSTR = responseBody -> responseBody;
     private PrintStream out;
     private BufferedReader reader;
+    private boolean jsonl;
 
-    public Serde(PrintStream o, BufferedReader r) {
+    public Serde(boolean js, PrintStream o, BufferedReader r) {
         reader = r;
         out = o;
+        jsonl = js;
+    }
+
+    public boolean isJsonl() {
+        return jsonl;
     }
 
     public JsonNode serialize(Response response, Function<String, ?> trafo) throws IOException {
@@ -29,21 +35,25 @@ public class Serde implements Closeable, Flushable {
         if (obj == null) return null;
         JsonNode bodyNode = OM.valueToTree(obj);
         var body = bodyNode.toString();
-        List<String> heads = new LinkedList<>();
-        for (String name : response.headers().names()) {
-            for (String value : response.headers(name)) {
-                heads.add(name + ": " + value);
-                break;
+        if (jsonl) {
+            out.println(body);
+        } else {
+            List<String> heads = new LinkedList<>();
+            for (String name : response.headers().names()) {
+                for (String value : response.headers(name)) {
+                    heads.add(name + ": " + value);
+                    break;
+                }
             }
+            out.println(heads.size() + " " + body.length());
+            out.println("HTTP/1.1 " + response.code() + " " + response.message());
+            out.println("x-request: " + response.request().url());
+            for (String h : heads) {
+                out.println(h);
+            }
+            out.println(body);
+            out.flush();
         }
-        out.println(heads.size() + " " + body.length());
-        out.println("HTTP/1.1 " + response.code() + " " + response.message());
-        out.println("x-request: " + response.request().url());
-        for (String h : heads) {
-            out.println(h);
-        }
-        out.println(body);
-        out.flush();
         return bodyNode;
     }
 

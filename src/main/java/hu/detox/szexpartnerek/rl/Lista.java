@@ -57,8 +57,10 @@ public class Lista implements TrafoEngine {
     }
 
     @Override
-    public File in() {
-        return new File("src/main/resources/lists.txt");
+    public String[] in() {
+        return new String[]{
+                "src/main/resources/lists.txt"
+        };
     }
 
     @Override

@@ -2,12 +2,13 @@ package hu.detox.szexpartnerek.rl;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import hu.detox.szexpartnerek.Persister;
 import hu.detox.szexpartnerek.TrafoEngine;
-import org.jsoup.internal.StringUtil;
 
 import java.io.File;
 import java.util.Iterator;
+import java.util.List;
 import java.util.function.Function;
 
 public class UserReviews implements TrafoEngine {
@@ -20,13 +21,15 @@ public class UserReviews implements TrafoEngine {
     @Override
     public Function<String, String> url() {
         return rest -> {
+            /*
             if (StringUtil.isBlank(rest)) {
                 rest = "707194";
             }
             if (StringUtil.isNumeric(rest)) {
                 rest = "4layer/user_left_beszamolo.php?id=" + rest + "&status=accepted";
             }
-            return rest;
+            return rest;*/
+            return null;
         };
     }
 
@@ -35,6 +38,8 @@ public class UserReviews implements TrafoEngine {
         ArrayNode an = (ArrayNode) parent.get(New.USERS);
         if (an != null) {
             return an.iterator();
+        } else if (parent instanceof ObjectNode) {
+            return List.of(parent.get("id")).iterator();
         }
         return null;
     }
@@ -50,8 +55,10 @@ public class UserReviews implements TrafoEngine {
     }
 
     @Override
-    public File in() {
-        return new File("src/main/resources/users.txt");
+    public String[] in() {
+        return new String[]{
+                "src/main/resources/users-reviews.txt"
+        };
     }
 
     @Override

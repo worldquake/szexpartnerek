@@ -15,12 +15,11 @@ import java.util.Map;
 
 public class ListaPersister implements Persister, Flushable {
     private final PreparedStatement partnerListStmt;
-    private final Connection conn;
     private int batch;
     private Map<String, String> map;
 
     public ListaPersister() throws SQLException, IOException {
-        this.conn = Main.APP.getConn();
+        Connection conn = Main.APP.getConn();
         map = Utils.map("src/main/resources/list-mapping.kv");
         conn.createStatement().executeUpdate("DELETE FROM partner_list");
         // Delete from partner_prop for dynamic lists
@@ -65,7 +64,7 @@ public class ListaPersister implements Persister, Flushable {
     public void close() throws SQLException, IOException {
         flush();
         // Insert or ignore into partner_prop based on lists
-        conn.createStatement().executeUpdate(
+        partnerListStmt.getConnection().createStatement().executeUpdate(
                 "INSERT OR IGNORE INTO partner_prop (partner_id, enum_id) " +
                         "SELECT pl.id, ie.id " +
                         "FROM partner_list pl " +

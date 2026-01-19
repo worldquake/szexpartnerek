@@ -132,7 +132,7 @@ public class UserPersister implements Persister, Flushable {
         } catch (SQLException ex) {
             throw new IOException("Unable to flush " + batch, ex);
         }
-        batch = 0;
         System.err.println("Flushed " + batch + " user");
+        batch = 0;
     }
 }

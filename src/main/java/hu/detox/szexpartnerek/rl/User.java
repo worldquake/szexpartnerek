@@ -58,8 +58,11 @@ public class User implements TrafoEngine {
     }
 
     @Override
-    public File in() {
-        return new File("src/main/resources/users.txt");
+    public String[] in() {
+        return new String[]{
+                "src/main/resources/users.txt",
+                "target/users.jsonl",
+        };
     }
 
     @Override

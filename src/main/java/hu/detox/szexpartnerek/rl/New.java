@@ -54,8 +54,10 @@ public class New implements TrafoEngine {
     }
 
     @Override
-    public File in() {
-        return new File("src/main/resources/newids.txt");
+    public String[] in() {
+        return new String[]{
+                "src/main/resources/newids.txt"
+        };
     }
 
     @Override

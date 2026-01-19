@@ -16,7 +16,7 @@ public interface TrafoEngine extends Function<String, Object>, AutoCloseable {
 
     Persister persister();
 
-    File in();
+    String[] in();
 
     File out();
 

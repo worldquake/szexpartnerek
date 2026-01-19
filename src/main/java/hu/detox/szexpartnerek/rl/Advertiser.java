@@ -110,13 +110,17 @@ public class Advertiser implements TrafoEngine, Flushable {
     }
 
     @Override
-    public File in() {
-        return new File("src/main/resources/partnerek.txt");
+    public String[] in() {
+        return new String[]{
+                "src/main/resources/partners.txt",
+                "target/partners.serde",
+                "target/partners.jsonl",
+        };
     }
 
     @Override
     public File out() {
-        return new File("target/partnerek.txt");
+        return new File("target/partners.jsonl");
     }
 
     private void loadEnums() throws IOException {
