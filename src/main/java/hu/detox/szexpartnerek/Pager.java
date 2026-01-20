@@ -15,12 +15,17 @@ public interface Pager extends Iterator<String> {
         }
 
         @Override
+        public void reset() {
+            wrapped.reset();
+        }
+
+        @Override
         public void first(JsonNode node) {
             wrapped.first(node);
         }
 
         @Override
-        public boolean current(JsonNode node) {
+        public int current(JsonNode node) {
             return wrapped.current(node);
         }
 
@@ -35,9 +40,11 @@ public interface Pager extends Iterator<String> {
         }
     }
 
+    void reset();
+
     void first(JsonNode node);
 
-    boolean current(JsonNode node);
+    int current(JsonNode node);
 
     default RequestBody req() {
         return null;

@@ -5,16 +5,29 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import hu.detox.szexpartnerek.Pager;
 import hu.detox.szexpartnerek.Utils;
 import okhttp3.RequestBody;
+import org.apache.commons.io.FileUtils;
 import org.jsoup.internal.StringUtil;
 import org.jsoup.nodes.Element;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.Iterator;
+import java.util.List;
 import java.util.function.Function;
 import java.util.regex.Matcher;
 
 public class Feedbacks extends UserReview {
     public static final Feedbacks INSTANCE = new Feedbacks();
+    private List<String> datas;
+
+    public Feedbacks() {
+        super();
+        try {
+            datas = FileUtils.readLines(new File("src/main/resources/search-reviews-data.txt"));
+        } catch (IOException e) {
+            throw new ExceptionInInitializerError(e);
+        }
+    }
 
     @Override
     public Function<String, String> url() {
@@ -66,10 +79,21 @@ public class Feedbacks extends UserReview {
     public Pager pager() {
         Pager p = super.pager();
         return new Pager.PagerWrap(p) {
+            private int di;
+
+            @Override
+            public boolean hasNext() {
+                boolean has = super.hasNext();
+                if (!has) {
+                    reset();
+                    di++;
+                }
+                return di < datas.size();
+            }
 
             @Override
             public RequestBody req() {
-                return Utils.bodyOf("filterMegye=&filterBeszamolo=1&clearFilters=0&filterGender=no&filterSubGenders%5B%5D=sp&filterSubGenders%5B%5D=ma&filterSubGenders%5B%5D=do&nev=&tel1=&nick=&szoveg=&datum_ev=&datum_ho=");
+                return Utils.bodyOf(datas.get(di));
             }
         };
     }

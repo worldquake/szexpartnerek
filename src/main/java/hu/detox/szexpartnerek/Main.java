@@ -75,7 +75,7 @@ public class Main implements Callable<Integer>, AutoCloseable {
                                 pg.first(bodyNode);
                                 first = false;
                             }
-                            cont = pg.current(bodyNode);
+                            cont = pg.current(bodyNode) >= 0;
                         }
                     } else if (serde.inMode().equals(Serde.Mode.JSONL)) {
                         bodyNode = Serde.OM.readTree(url);

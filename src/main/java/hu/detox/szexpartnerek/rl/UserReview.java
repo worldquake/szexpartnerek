@@ -110,6 +110,14 @@ public class UserReview extends Mapper {
             private int mode;
 
             @Override
+            public void reset() {
+                max = null;
+                curr = null;
+                offset = 0;
+                mode = 0;
+            }
+
+            @Override
             public void first(JsonNode node) {
                 try {
                     max = Serde.OM.treeToValue(node.get("pager"), int[].class);
@@ -120,16 +128,17 @@ public class UserReview extends Mapper {
             }
 
             @Override
-            public boolean current(JsonNode node) {
-                int cr = 0;
+            public int current(JsonNode node) {
+                if (max == null) first(node);
+                int cr = 0, cc = 0;
                 for (String sm : SMODES) {
                     String key = addProp(fbtype, null, null, sm).toString();
                     JsonNode nd = node.get(key);
-                    curr[cr++] += nd == null ? 0 : nd.size();
+                    cc += curr[cr++] += nd == null ? 0 : nd.size();
                 }
                 boolean cont = hasNext();
                 if (cont) nextMode();
-                return cont;
+                return cont ? cc : -1;
             }
 
             @Override

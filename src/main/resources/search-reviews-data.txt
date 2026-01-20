@@ -1,0 +1,5 @@
+filterMegye=all&filterBeszamolo=1&clearFilters=0&filterGender=no&filterSubGenders%5B%5D=sp&filterSubGenders%5B%5D=ma&filterSubGenders%5B%5D=do&nev=&tel1=&nick=&szoveg=&datum_ev=&datum_ho=
+filterMegye=all&filterBeszamolo=1&clearFilters=0&filterGender=webcam&nev=&tel1=&nick=&szoveg=&datum_ev=&datum_ho=
+filterMegye=all&filterBeszamolo=1&clearFilters=0&filterGender=ferfi&nev=&tel1=&nick=&szoveg=&datum_ev=&datum_ho=
+filterMegye=all&filterBeszamolo=1&clearFilters=0&filterGender=par&nev=&tel1=&nick=&szoveg=&datum_ev=&datum_ho=
+filterMegye=all&filterBeszamolo=1&clearFilters=0&filterGender=trans&nev=&tel1=&nick=&szoveg=&datum_ev=&datum_ho=
