@@ -81,7 +81,7 @@ public class UserReview extends Mapper {
     }
 
     @Override
-    public Persister persister() {
+    public UserReviewPersister persister() {
         return persister;
     }
 
@@ -171,18 +171,25 @@ public class UserReview extends Mapper {
 
     protected ObjectNode readSingle(String[] sel, Document soup, Element elem) {
         var ret = Serde.OM.createObjectNode();
-        Integer userId = userId(soup, elem);
+        Matcher m;
         Element dateDiv = elem.selectFirst("div[id^=dateDiv]");
-        if (dateDiv == null || userId == null) return null;
+        // Get the Timestamp
+        String ts = null;
+        if (dateDiv != null) {
+            String onMouseOver = dateDiv.attr("onmouseover");
+            m = Pattern
+                    .compile("'(\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2})'").matcher(onMouseOver);
+            if (m.find()) {
+                ts = m.group(1);
+            }
+        }
+        // And user ID:
+        Integer userId = ts == null ? null : userId(soup, elem, ts);
+        if (ts == null || userId == null) return null;
+        ret.put("ts", ts);
         ret.put(User.IDR, userId);
-        String onMouseOver = dateDiv.attr("onmouseover");
         Integer id = Integer.parseInt(dateDiv.id().replace("dateDiv", ""));
         ret.put("id", id);
-        Matcher m = Pattern
-                .compile("'(\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2})'").matcher(onMouseOver);
-        if (m.find()) {
-            ret.put("ts", m.group(1));
-        }
 
         // Finding the partner "name" and all data we can usee about the partner
         Element a = elem.selectFirst(sel[1]);
@@ -279,7 +286,7 @@ public class UserReview extends Mapper {
         };
     }
 
-    protected Integer userId(Document soup, Element curr) {
+    protected Integer userId(Document soup, Element curr, String ts) {
         Comment cmt = ((Comment) soup.childNode(0));
         Matcher m = Partner.IDP.matcher(cmt.getData());
         Integer userId = null;

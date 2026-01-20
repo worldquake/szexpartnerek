@@ -8,10 +8,7 @@ import hu.detox.szexpartnerek.TrafoEngine;
 
 import java.io.Flushable;
 import java.io.IOException;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.SQLException;
-import java.sql.Types;
+import java.sql.*;
 import java.util.Iterator;
 import java.util.Map;
 
@@ -20,6 +17,7 @@ import static hu.detox.szexpartnerek.Utils.getField;
 
 public class UserReviewPersister implements Persister, Flushable {
     private static final TrafoEngine[] PRE = new TrafoEngine[]{Partner.INSTANCE};
+    private final PreparedStatement maxDateStmt;
     private final PreparedStatement feedbackStmt;
     private final PreparedStatement ratingStmt;
     private final PreparedStatement gbStmt;
@@ -27,6 +25,9 @@ public class UserReviewPersister implements Persister, Flushable {
     private int batch;
 
     public UserReviewPersister(Connection conn) throws SQLException {
+        maxDateStmt = conn.prepareStatement(
+                "SELECT MAX(ts)|| ':00' FROM user_partner_feedback"
+        );
         feedbackStmt = conn.prepareStatement(
                 "INSERT INTO user_partner_feedback (id, " + User.IDR + ", " + Partner.IDR + ", " + Persister.ENUM_IDR + ", name, after_name, useful, age, ts) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?) " +
                         "ON CONFLICT(id, " + User.IDR + ") DO UPDATE SET " +
@@ -141,6 +142,11 @@ public class UserReviewPersister implements Persister, Flushable {
         }
     }
 
+    public Timestamp maxTs() throws SQLException {
+        Timestamp res = maxDateStmt.executeQuery().getTimestamp(1);
+        return res == null ? new Timestamp(0) : res;
+    }
+
     @Override
     public void flush() throws IOException {
         if (batch == 0) return;
@@ -163,5 +169,6 @@ public class UserReviewPersister implements Persister, Flushable {
         ratingStmt.close();
         gbStmt.close();
         detailsStmt.close();
+        maxDateStmt.close();
     }
 }

@@ -13,6 +13,8 @@ import org.jsoup.nodes.Element;
 
 import java.io.File;
 import java.io.IOException;
+import java.sql.SQLException;
+import java.sql.Timestamp;
 import java.util.Iterator;
 import java.util.List;
 import java.util.function.Function;
@@ -22,12 +24,14 @@ public class Feedbacks extends UserReview {
     public static final Feedbacks INSTANCE = new Feedbacks();
     private static final TrafoEngine[] PRE = new TrafoEngine[]{Partner.INSTANCE, User.INSTANCE};
     private List<String> datas;
+    private Timestamp last;
 
     public Feedbacks() {
         super();
         try {
+            last = persister().maxTs();
             datas = FileUtils.readLines(new File("src/main/resources/search-reviews-data.txt"));
-        } catch (IOException e) {
+        } catch (IOException | SQLException e) {
             throw new ExceptionInInitializerError(e);
         }
     }
@@ -87,9 +91,11 @@ public class Feedbacks extends UserReview {
     }
 
     @Override
-    protected Integer userId(Document soup, Element curr) {
+    protected Integer userId(Document soup, Element curr, String ts) {
         String uid = curr.selectFirst(".beszHeader a").attr("href");
         Matcher m = Partner.IDP.matcher(uid);
+        Timestamp now = Timestamp.valueOf(ts + ":00");
+        if (now.before(last)) return null;
         return m.find() ? Integer.parseInt(m.group(2)) : null;
     }
 
@@ -107,6 +113,12 @@ public class Feedbacks extends UserReview {
                     di++;
                 }
                 return di < datas.size();
+            }
+
+            @Override
+            public int current(JsonNode node) {
+                if (node.size() == 1) return -1; // We skipped items, only pager is there
+                return super.current(node);
             }
 
             @Override

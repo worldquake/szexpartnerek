@@ -32,9 +32,9 @@ BEGIN
 END;
 CREATE TABLE tmp_user_likes
 (
-    " + User.IDR + " INTEGER NOT NULL REFERENCES user (id),
-    like             TEXT    NOT NULL,
-    PRIMARY KEY (" + User.IDR + ", like)
+    user_id INTEGER NOT NULL REFERENCES user (id),
+    like    TEXT    NOT NULL,
+    PRIMARY KEY (user_id, like)
 );
 -- Main partner table
 CREATE TABLE partner
@@ -259,16 +259,16 @@ FROM partner p;
 -- Feedback tables
 CREATE TABLE user_partner_feedback
 (
-    id               INTEGER,
-    " + User.IDR + " INTEGER  NOT NULL REFERENCES user (id) ON DELETE CASCADE,
-    enum_id          INTEGER  NOT NULL REFERENCES int_enum (id) ON DELETE CASCADE,
-    partner_id       INTEGER REFERENCES partner (id) ON DELETE CASCADE,
-    name             TEXT,
-    age              TINYINT,
-    after_name       TEXT,
-    useful           INTEGER  NOT NULL,
-    ts               DATETIME NOT NULL,
-    PRIMARY KEY (id, " + User.IDR + ")
+    id         INTEGER,
+    user_id    INTEGER  NOT NULL REFERENCES user (id) ON DELETE CASCADE,
+    enum_id    INTEGER  NOT NULL REFERENCES int_enum (id) ON DELETE CASCADE,
+    partner_id INTEGER REFERENCES partner (id) ON DELETE CASCADE,
+    name       TEXT,
+    age        TINYINT,
+    after_name TEXT,
+    useful     INTEGER  NOT NULL,
+    ts         DATETIME NOT NULL,
+    PRIMARY KEY (id, user_id)
 );
 CREATE TRIGGER upfb_enum_check
     BEFORE INSERT
