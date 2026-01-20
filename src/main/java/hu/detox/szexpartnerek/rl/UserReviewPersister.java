@@ -28,8 +28,8 @@ public class UserReviewPersister implements Persister, Flushable {
 
     public UserReviewPersister(Connection conn) throws SQLException {
         feedbackStmt = conn.prepareStatement(
-                "INSERT INTO user_partner_feedback (id, user_id, " + Persister.ENUM_IDR + ", " + Partner.IDR + ", name, after_name, useful, age, ts) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?) " +
-                        "ON CONFLICT(id, user_id) DO UPDATE SET " +
+                "INSERT INTO user_partner_feedback (id, " + User.IDR + ", " + Partner.IDR + ", " + Persister.ENUM_IDR + ", name, after_name, useful, age, ts) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?) " +
+                        "ON CONFLICT(id, " + User.IDR + ") DO UPDATE SET " +
                         Partner.IDR + " = COALESCE(user_partner_feedback." + Partner.IDR + ", excluded." + Partner.IDR + "), " +
                         Persister.ENUM_IDR + " = COALESCE(user_partner_feedback." + Persister.ENUM_IDR + ", excluded." + Persister.ENUM_IDR + "), " +
                         "name = excluded.name, after_name = excluded.after_name, " +
@@ -55,13 +55,13 @@ public class UserReviewPersister implements Persister, Flushable {
         return PRE;
     }
 
-    public void saveSingle(ObjectNode item, Integer intk) throws SQLException, IOException {
+    public void saveSingle(ObjectNode item, Integer enumId) throws SQLException, IOException {
         // Insert main feedback
         int fbid = item.get("id").intValue();
         feedbackStmt.setInt(1, fbid);
         feedbackStmt.setObject(2, getField(item, User.IDR));
-        feedbackStmt.setInt(3, intk);
-        feedbackStmt.setObject(4, getField(item, Partner.IDR), Types.INTEGER);
+        feedbackStmt.setObject(3, getField(item, Partner.IDR));
+        feedbackStmt.setInt(4, enumId);
         feedbackStmt.setObject(5, getField(item, "name"));
         feedbackStmt.setObject(6, getField(item, "after_name"));
         feedbackStmt.setObject(7, getField(item, "useful"), Types.INTEGER);
@@ -130,14 +130,14 @@ public class UserReviewPersister implements Persister, Flushable {
         var itemi = root.fields();
         while (itemi.hasNext()) {
             var eitem = itemi.next();
-            Integer intk = null;
+            Integer enumId = null;
             try {
-                intk = Integer.parseInt(eitem.getKey());
+                enumId = Integer.parseInt(eitem.getKey());
             } catch (NumberFormatException nfe) {
                 continue;
             }
             for (var item : eitem.getValue())
-                saveSingle((ObjectNode) item, intk);
+                saveSingle((ObjectNode) item, enumId);
         }
     }
 

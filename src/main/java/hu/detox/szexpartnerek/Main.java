@@ -1,9 +1,6 @@
 package hu.detox.szexpartnerek;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import hu.detox.szexpartnerek.rl.Feedbacks;
-import hu.detox.szexpartnerek.rl.Lista;
-import hu.detox.szexpartnerek.rl.New;
 import hu.detox.szexpartnerek.rl.User;
 import okhttp3.RequestBody;
 import org.apache.commons.io.IOUtils;
@@ -23,8 +20,6 @@ import java.util.function.Function;
 
 public class Main implements Callable<Integer>, AutoCloseable {
     public static final Main APP = new Main();
-    public static final String JSONL = ".jsonl";
-    public static final String SER = ".ser";
     private Http rl = new Http("https://rosszlanyok.hu/");
     private static Db DB = new Db(new File("target/data/db.sqlite3"));
     private transient Set<AutoCloseable> closeables = new HashSet<>();
@@ -119,10 +114,10 @@ public class Main implements Callable<Integer>, AutoCloseable {
 
     @Override
     public Integer call() throws Exception {
-        rlDataDl(true, Feedbacks.INSTANCE, null);
+        //rlDataDl(true, Feedbacks.INSTANCE, null);
         rlDataDl(true, User.INSTANCE, null);
-        rlDataDl(true, New.INSTANCE, null);
-        rlDataDl(true, Lista.INSTANCE, null);
+        //rlDataDl(true, New.INSTANCE, null);
+        //rlDataDl(true, Lista.INSTANCE, null);
         return 0;
     }
 

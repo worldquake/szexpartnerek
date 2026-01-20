@@ -24,6 +24,8 @@ import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import static hu.detox.szexpartnerek.Utils.text;
+
 public class Partner extends Mapper {
     public static final String IDR = "partner_id";
     public static final Partner INSTANCE = new Partner();
@@ -41,6 +43,12 @@ public class Partner extends Mapper {
     private Map<String, String> massage;
     private Map<String, String> looking;
     private Map<String, String> massageReverse = new HashMap<>();
+
+    public static String cleanName(String name) {
+        name = Utils.normalize(name);
+        if (name != null && !"Törölt_Adatlap".equals(name)) name = null;
+        return name;
+    }
 
     private Partner() {
         super("src/main/resources/prop-mapping.kv");
@@ -116,9 +124,11 @@ public class Partner extends Mapper {
             return List.of(node).iterator();
         } else if (parent instanceof ObjectNode on) {
             ArrayList<Integer> res = new ArrayList<>(2000);
-            for (JsonNode ian : on) {
-                for (JsonNode ien : ian) {
-                    res.add(ien.get(0).asInt());
+            for (Map.Entry<String, JsonNode> ian : on.properties()) {
+                if (Utils.PAGER.equals(ian.getKey())) continue;
+                for (JsonNode ien : ian.getValue()) {
+                    JsonNode partnerId = ien.get(Partner.IDR);
+                    if (partnerId != null) res.add(partnerId.asInt());
                 }
             }
             return res.iterator();
@@ -143,17 +153,6 @@ public class Partner extends Mapper {
     @Override
     public File out() {
         return new File("target/gen-partners.jsonl");
-    }
-
-    private String text(Element el, String... attrs) {
-        if (el == null) return null;
-        String data = null;
-        for (String att : attrs) {
-            data = Utils.normalize(el.attr(att));
-            if (data != null) break;
-        }
-        if (data == null) data = Utils.normalize(el.text());
-        return data;
     }
 
     private Element html(Element el, String repl) {

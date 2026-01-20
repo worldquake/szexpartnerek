@@ -33,11 +33,11 @@ public class UserPersister implements Persister, Flushable {
                 "size = COALESCE(excluded.size, user.size)";
         this.userStmt = conn.prepareStatement(userSql);
 
-        String likesSql = "INSERT INTO tmp_user_likes (user_id, like) VALUES (?, ?) " +
-                "ON CONFLICT(user_id, like) DO NOTHING";
+        String likesSql = "INSERT INTO tmp_user_likes (" + User.IDR + ", like) VALUES (?, ?) " +
+                "ON CONFLICT(" + User.IDR + ", like) DO NOTHING";
         this.userLikesStmt = conn.prepareStatement(likesSql);
 
-        String likesDeleteSql = "DELETE FROM tmp_user_likes WHERE user_id = ?";
+        String likesDeleteSql = "DELETE FROM tmp_user_likes WHERE " + User.IDR + " = ?";
         this.userLikesDeleteStmt = conn.prepareStatement(likesDeleteSql);
     }
 

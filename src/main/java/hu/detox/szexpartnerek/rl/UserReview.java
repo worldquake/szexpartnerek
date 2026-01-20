@@ -120,7 +120,7 @@ public class UserReview extends Mapper {
             @Override
             public void first(JsonNode node) {
                 try {
-                    max = Serde.OM.treeToValue(node.get("pager"), int[].class);
+                    max = Serde.OM.treeToValue(node.get(Utils.PAGER), int[].class);
                     curr = new int[max.length];
                 } catch (JsonProcessingException e) {
                     throw new IllegalStateException(e);
@@ -169,14 +169,12 @@ public class UserReview extends Mapper {
         };
     }
 
-    protected ObjectNode readSingle(Integer idp, Element elem) {
+    protected ObjectNode readSingle(String[] sel, Document soup, Element elem) {
         var ret = Serde.OM.createObjectNode();
-        ret.put(User.IDR, idp);
-
-        // 1. "ts" field: date from onmouseover attribute in the right dateDiv
+        Integer userId = userId(soup, elem);
         Element dateDiv = elem.selectFirst("div[id^=dateDiv]");
-        Element a = elem.selectFirst("a[href], a[onclick]");
-        if (dateDiv == null || a == null) return null;
+        if (dateDiv == null || userId == null) return null;
+        ret.put(User.IDR, userId);
         String onMouseOver = dateDiv.attr("onmouseover");
         Integer id = Integer.parseInt(dateDiv.id().replace("dateDiv", ""));
         ret.put("id", id);
@@ -186,17 +184,12 @@ public class UserReview extends Mapper {
             ret.put("ts", m.group(1));
         }
 
-        // 2. "name" and "partner_id"
-        String name = Utils.normalize(a.text());
-        if (!"Törölt_Adatlap".equals(name)) ret.put("name", name);
-        String href = a.attr("href");
-        Matcher idMatch = Pattern.compile("id=(\\d+)").matcher(href);
-        if (idMatch.find()) {
-            ret.put("partner_id", Integer.parseInt(idMatch.group(1)));
-        }
-
-        // 3. "after_name" (text after <a>, cleaned)
-        if (a.parent() != null) {
+        // Finding the partner "name" and all data we can usee about the partner
+        Element a = elem.selectFirst(sel[1]);
+        String name = Partner.cleanName(Utils.text(a));
+        if (name != null) ret.put("name", name);
+        Element extra = partnerId(ret, elem);
+        if (extra != null) {
             String after = Utils.normalize(a.parent().ownText()
                     .replace("(inaktív)", "")
                     .replace(')', '|'));
@@ -212,7 +205,7 @@ public class UserReview extends Mapper {
             }
         }
 
-        // 4. "useful" from hasznosDiv
+        // "useful" from hasznosDiv
         Element hasznosDiv = elem.selectFirst("#hasznosDiv");
         int haszn = 0;
         if (hasznosDiv != null) {
@@ -223,7 +216,7 @@ public class UserReview extends Mapper {
         }
         ret.put("useful", haszn);
 
-        // 5. "rates" array
+        // "rates" array
         int[] ratesArr;
         Elements ratingLabels = elem.select(".ratingLabel");
         Elements ratingStars = elem.select(".ratingStars img[alt]");
@@ -245,7 +238,7 @@ public class UserReview extends Mapper {
             ret.put("rates", Serde.OM.valueToTree(ratesArr));
         }
 
-        // 6. "good" and "bad" arrays
+        // "good" and "bad" arrays
         ArrayNode goodArr = ret.putArray("good");
         ArrayNode badArr = ret.putArray("bad");
         for (Element div : elem.select("div[style]")) {
@@ -256,7 +249,7 @@ public class UserReview extends Mapper {
             }
         }
 
-        // 7. "details" object
+        // "details" object
         ObjectNode details = ret.putObject("details");
         Element detailsDiv = elem.selectFirst("div[style*=font-size: 11px]");
         if (detailsDiv != null) {
@@ -280,19 +273,37 @@ public class UserReview extends Mapper {
     }
 
     protected String[] selectors() {
-        return new String[]{"div#beszamoloMainContent>div[style*=\"A0706E\"]"};
+        return new String[]{
+                "div#beszamoloMainContent>div[style*=\"A0706E\"]", // The list items
+                "a[href], a[onclick]" // The partner's id
+        };
+    }
+
+    protected Integer userId(Document soup, Element curr) {
+        Comment cmt = ((Comment) soup.childNode(0));
+        Matcher m = Partner.IDP.matcher(cmt.getData());
+        Integer userId = null;
+        if (m.find()) userId = Integer.parseInt(m.group(2));
+        return userId;
+    }
+
+    protected Element partnerId(ObjectNode map, Element curr) {
+        Element a = curr.selectFirst("a[href], a[onclick]");
+        if (a == null) return null;
+        String href = a.attr("href");
+        Matcher idMatch = Partner.IDP.matcher(href);
+        if (idMatch.find()) {
+            map.put(Partner.IDR, Integer.parseInt(idMatch.group(2)));
+        }
+        return a.parent();
     }
 
     @Override
     public ObjectNode apply(String s) {
         Document soup = Jsoup.parse(s);
         String[] sels = selectors();
-        Comment cmt = ((Comment) soup.childNode(0));
-        Matcher m = Partner.IDP.matcher(cmt.getData());
-        Integer idp = null;
-        if (m.find()) idp = Integer.parseInt(m.group(2));
         Element hel = soup.selectFirst("div#beszamoloHeaderDiv");
-        m = MODEP.matcher(hel.text());
+        Matcher m = MODEP.matcher(hel.text());
         Elements chds = hel.children();
         int key = IntStream.range(0, chds.size())
                 .filter(i -> chds.get(i).hasClass("bHTabAct"))
@@ -303,14 +314,14 @@ public class UserReview extends Mapper {
         while (m.find()) {
             pg.add(Integer.parseInt(m.group(2)));
         }
-        res.put("pager", pg);
+        res.put(Utils.PAGER, pg);
         String okey = addProp(fbtype, null, null, SMODES[key]).toString();
         ArrayNode an = (ArrayNode) res.get(okey);
         if (an == null) {
             an = Serde.OM.createArrayNode();
         }
         for (Element iel : soup.select(sels[0])) {
-            var con = readSingle(idp, iel);
+            var con = readSingle(sels, soup, iel);
             if (con == null) break;
             an.add(con);
         }

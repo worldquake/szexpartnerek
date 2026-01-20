@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import okhttp3.MediaType;
 import okhttp3.RequestBody;
 import org.jsoup.internal.StringUtil;
+import org.jsoup.nodes.Element;
 
 import java.io.BufferedReader;
 import java.io.FileReader;
@@ -13,6 +14,7 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 public class Utils {
+    public static final String PAGER = "pager";
 
     public static RequestBody bodyOf(String form) {
         return RequestBody.create(
@@ -31,6 +33,17 @@ public class Utils {
             }
         }
         return res;
+    }
+
+    public static String text(Element el, String... attrs) {
+        if (el == null) return null;
+        String data = null;
+        for (String att : attrs) {
+            data = Utils.normalize(el.attr(att));
+            if (data != null) break;
+        }
+        if (data == null) data = Utils.normalize(el.text());
+        return data;
     }
 
     public static Object getField(JsonNode node, String key) {

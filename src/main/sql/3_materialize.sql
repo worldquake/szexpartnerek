@@ -312,24 +312,24 @@ DROP TABLE IF EXISTS user_likes;
 
 CREATE TABLE user_likes
 (
-    user_id INTEGER NOT NULL REFERENCES user (id),
-    like_id TINYINT NOT NULL REFERENCES int_enum (id),
-    PRIMARY KEY (user_id, like_id)
+    " + User.IDR + " INTEGER NOT NULL REFERENCES user (id),
+    like_id          TINYINT NOT NULL REFERENCES int_enum (id),
+    PRIMARY KEY (" + User.IDR + ", like_id)
 );
-INSERT INTO user_likes (user_id, like_id)
-SELECT ul.user_id, ie.id
+INSERT INTO user_likes (" + User.IDR + ", like_id)
+SELECT ul." + User.IDR + ", ie.id
 FROM tmp_user_likes ul
          JOIN int_enum ie ON ie.type = 'likes' AND ie.name = ul.like;
 
 
 CREATE VIEW user_likes_view AS
-SELECT user_id,
+SELECT " + User.IDR + ",
        GROUP_CONCAT(ie.name, ', ') AS likes
 FROM user_likes ul
          JOIN int_enum ie ON ul.like_id = ie.id AND ie.type = 'likes'
-GROUP BY user_id;
+GROUP BY " + User.IDR + ";
 CREATE VIEW user_view AS
 SELECT u.*,
        ulv.likes
 FROM user u
-         LEFT JOIN user_likes_view ulv ON u.id = ulv.user_id;
+         LEFT JOIN user_likes_view ulv ON u.id = ulv." + User.IDR + ";

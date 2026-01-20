@@ -8,6 +8,7 @@ import hu.detox.szexpartnerek.Utils;
 import okhttp3.RequestBody;
 import org.apache.commons.io.FileUtils;
 import org.jsoup.internal.StringUtil;
+import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 
 import java.io.File;
@@ -59,7 +60,10 @@ public class Feedbacks extends UserReview {
     }
 
     protected String[] selectors() {
-        return new String[]{"div.beszOuter"};
+        return new String[]{
+                "div.beszOuter", // In this view this is the list item
+                ".hiddenNev" // This is the holder of the partner info
+        };
     }
 
     @Override
@@ -73,12 +77,20 @@ public class Feedbacks extends UserReview {
     }
 
     @Override
-    protected ObjectNode readSingle(Integer idp, Element elem) {
-        String href = elem.selectFirst("div.beszHeader a").attr("href");
-        Matcher m = Partner.IDP.matcher(href);
-        if (m.find()) idp = Integer.parseInt(m.group(2));
-        else return null;
-        return super.readSingle(idp, elem);
+    protected Element partnerId(ObjectNode map, Element curr) {
+        Element partner = curr.selectFirst("#placeholder");
+        if (partner != null) {
+            String id = partner.attr("data-memberthumb");
+            if (id != null) map.put(Partner.IDR, Integer.parseInt(id));
+        }
+        return null;
+    }
+
+    @Override
+    protected Integer userId(Document soup, Element curr) {
+        String uid = curr.selectFirst(".beszHeader a").attr("href");
+        Matcher m = Partner.IDP.matcher(uid);
+        return m.find() ? Integer.parseInt(m.group(2)) : null;
     }
 
     @Override

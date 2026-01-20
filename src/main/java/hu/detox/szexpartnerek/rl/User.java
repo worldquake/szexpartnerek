@@ -132,7 +132,7 @@ public class User implements TrafoEngine {
     @Override
     public Iterator<?> input(JsonNode parent) {
         ArrayNode an = (ArrayNode) parent.get(New.USERS);
-        JsonNode uid = an.get(User.IDR);
+        JsonNode uid = parent.get(User.IDR);
         if (an != null) {
             return an.iterator();
         } else if (uid != null) {
