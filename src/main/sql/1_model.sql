@@ -261,9 +261,9 @@ FROM partner p;
 CREATE TABLE user_partner_feedback
 (
     id         INTEGER,
-    user_id    INTEGER  NOT NULL REFERENCES user_partner_feedback (id) ON DELETE CASCADE,
-    enum_id    INTEGER  NOT NULL REFERENCES user_partner_feedback (id) ON DELETE CASCADE,
-    partner_id INTEGER, -- Not always visible
+    user_id    INTEGER  NOT NULL REFERENCES user (id) ON DELETE CASCADE,
+    enum_id    INTEGER  NOT NULL REFERENCES int_enum (id) ON DELETE CASCADE,
+    partner_id INTEGER,
     name       TEXT,
     age        TINYINT,
     after_name TEXT,
@@ -340,3 +340,37 @@ BEGIN
                               'user_partner_feedback_details: attempted to insert enum_id not found or not unique for type=fbdtype')
                END;
 END;
+
+CREATE VIEW user_partner_feedback_view AS
+WITH ratings AS (SELECT fb.id,
+                        GROUP_CONCAT(e.name || ': ' || r.val, ', ') AS rating
+                 FROM user_partner_feedback fb
+                          LEFT JOIN user_partner_feedback_rating r ON r.fbid = fb.id
+                          LEFT JOIN int_enum e ON r.enum_id = e.id AND e.type = 'fbrtype'
+                 GROUP BY fb.id)
+SELECT fb.*,
+       rt.rating,
+
+       -- Good: enum names (bad=0)
+       (SELECT GROUP_CONCAT(e.name, ', ')
+        FROM user_partner_feedback_gb gb
+                 JOIN int_enum e ON gb.enum_id = e.id AND e.type = 'fbgbtype'
+        WHERE gb.fbid = fb.id
+          AND gb.bad = 0)     AS good,
+
+       -- Bad: enum names (bad=1)
+       (SELECT GROUP_CONCAT(e.name, ', ')
+        FROM user_partner_feedback_gb gb
+                 JOIN int_enum e ON gb.enum_id = e.id AND e.type = 'fbgbtype'
+        WHERE gb.fbid = fb.id
+          AND gb.bad = 1)     AS bad,
+
+       -- Details: each as "ENUMNAME: val", separated by double newline
+       (SELECT GROUP_CONCAT(e.name || ': ' || d.val, CHAR(10) || CHAR(10))
+        FROM user_partner_feedback_details d
+                 JOIN int_enum e ON d.enum_id = e.id AND e.type = 'fbdtype'
+        WHERE d.fbid = fb.id) AS details
+
+FROM user_partner_feedback fb
+         JOIN ratings rt ON fb.id = rt.id
+WHERE rt.rating IS NOT NULL;

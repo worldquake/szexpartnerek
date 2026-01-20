@@ -251,7 +251,7 @@ public class UserReview extends Mapper {
         // Good: border-color: #5AEA28 or rgb(90,234,40)
         for (Element div : elem.select("div[style]")) {
             String style = div.attr("style");
-            ArrayNode an = style.contains("5AEA28") ? badArr : style.contains("FF0000") ? goodArr : null;
+            ArrayNode an = style.contains("5AEA28") ? goodArr : style.contains("FF0000") ? badArr : null;
             if (an != null) for (String el : Utils.normalize(div.text()).split(", ")) {
                 addProp(fbgbtype, an, null, el);
             }

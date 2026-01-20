@@ -1,5 +1,6 @@
 -- Drop views
 DROP VIEW IF EXISTS partner_view;
+DROP VIEW IF EXISTS user_partner_feedback_view;
 
 -- Drop triggers first
 DROP TRIGGER IF EXISTS update_user_ingestion_date;
