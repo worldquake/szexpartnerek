@@ -28,7 +28,12 @@ public class UserReviewPersister implements Persister, Flushable {
         feedbackStmt = conn.prepareStatement(
                 "INSERT INTO user_partner_feedback (id, user_id, enum_id, partner_id, name, after_name, useful, age, ts) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?) " +
                         "ON CONFLICT(id, user_id) DO UPDATE SET " +
-                        "partner_id=excluded.partner_id, enum_id=excluded.enum_id, name=excluded.name, after_name=excluded.after_name, useful=excluded.useful, age=excluded.age, ts=excluded.ts"
+                        "partner_id = COALESCE(user_partner_feedback.partner_id, excluded.partner_id), " +
+                        "enum_id = COALESCE(user_partner_feedback.enum_id, excluded.enum_id), " +
+                        "name = excluded.name, after_name = excluded.after_name, " +
+                        "useful = COALESCE(user_partner_feedback.useful, excluded.useful), " +
+                        "age = COALESCE(user_partner_feedback.age, excluded.age), " +
+                        "ts = COALESCE(user_partner_feedback.ts, excluded.ts)"
         );
         ratingStmt = conn.prepareStatement(
                 "INSERT INTO user_partner_feedback_rating (fbid, enum_id, val) VALUES (?, ?, ?) " +

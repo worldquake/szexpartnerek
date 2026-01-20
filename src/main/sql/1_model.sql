@@ -256,14 +256,13 @@ SELECT p.*,
         WHERE poh.partner_id = p.id)   AS open_hours
 FROM partner p;
 
-
 -- Feedback tables
 CREATE TABLE user_partner_feedback
 (
     id         INTEGER,
     user_id    INTEGER  NOT NULL REFERENCES user (id) ON DELETE CASCADE,
     enum_id    INTEGER  NOT NULL REFERENCES int_enum (id) ON DELETE CASCADE,
-    partner_id INTEGER,
+    partner_id INTEGER REFERENCES partner (id) ON DELETE CASCADE,
     name       TEXT,
     age        TINYINT,
     after_name TEXT,
