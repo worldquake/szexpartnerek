@@ -15,6 +15,7 @@ import org.jsoup.nodes.Element;
 import java.io.File;
 import java.io.IOException;
 import java.sql.SQLException;
+import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -22,10 +23,11 @@ import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-public class User implements TrafoEngine {
+public class User implements TrafoEngine, TrafoEngine.Filteres {
     public static final String IDR = "user_id";
     public static final User INSTANCE = new User();
     private static final TrafoEngine[] SUB = new TrafoEngine[]{UserReview.INSTANCE};
+    private transient Collection<String> idList;
     private transient UserPersister persister;
     private Map<String, String> propMapping;
 
@@ -33,6 +35,7 @@ public class User implements TrafoEngine {
         try {
             propMapping = Utils.map("src/main/resources/prop-mapping.kv");
             persister = new UserPersister();
+            idList = persister.getUntouchableIds();
         } catch (SQLException | IOException e) {
             throw new ExceptionInInitializerError(e);
         }
@@ -175,5 +178,10 @@ public class User implements TrafoEngine {
                 soup.selectFirst("table#dataUpperTable").text(),
                 frstln
         );
+    }
+
+    @Override
+    public boolean skips(String in) {
+        return this.idList.contains(in);
     }
 }

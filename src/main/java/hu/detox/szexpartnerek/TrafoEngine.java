@@ -8,6 +8,11 @@ import java.util.Iterator;
 import java.util.function.Function;
 
 public interface TrafoEngine extends Function<String, Object>, AutoCloseable {
+
+    interface Filteres {
+        boolean skips(String in);
+    }
+
     Function<String, String> url();
 
     Iterator<?> input(JsonNode parent);

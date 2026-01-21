@@ -330,6 +330,12 @@ FROM user_likes ul
 GROUP BY user_id;
 CREATE VIEW user_view AS
 SELECT u.*,
-       ulv.likes
+       ulv.likes,
+       (SELECT upfv.location
+        FROM user_partner_feedback_view upfv
+        WHERE upfv.user_id = u.id
+          AND upfv.location IS NOT NULL
+        ORDER BY upfv.ts DESC
+        LIMIT 1) AS location
 FROM user u
          LEFT JOIN user_likes_view ulv ON u.id = ulv.user_id;

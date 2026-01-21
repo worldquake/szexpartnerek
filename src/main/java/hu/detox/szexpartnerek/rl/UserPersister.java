@@ -7,10 +7,9 @@ import hu.detox.szexpartnerek.Persister;
 
 import java.io.Flushable;
 import java.io.IOException;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.SQLException;
-import java.sql.Types;
+import java.sql.*;
+import java.util.HashSet;
+import java.util.Set;
 
 import static hu.detox.szexpartnerek.Utils.getField;
 
@@ -39,6 +38,19 @@ public class UserPersister implements Persister, Flushable {
 
         String likesDeleteSql = "DELETE FROM tmp_user_likes WHERE " + User.IDR + " = ?";
         this.userLikesDeleteStmt = conn.prepareStatement(likesDeleteSql);
+    }
+
+    public Set<String> getUntouchableIds() throws SQLException {
+        HashSet<String> toProcess = new HashSet<>();
+        String untouchedSql = "SELECT id FROM user WHERE ts < datetime('now', '-1 day')";
+        ResultSet rs = Main.APP.getConn().createStatement().executeQuery(untouchedSql);
+        while (rs.next()) {
+            while (rs.next()) {
+                toProcess.add(rs.getString(1));
+            }
+            rs.close();
+        }
+        return toProcess;
     }
 
     @Override

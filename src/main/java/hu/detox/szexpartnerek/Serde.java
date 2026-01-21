@@ -47,7 +47,7 @@ public class Serde implements Closeable, Flushable {
         }
     }
 
-    public boolean isUrlMode() {
+    public boolean isListMode() {
         return inMode != null && inMode.equals(Mode.TXT);
     }
 

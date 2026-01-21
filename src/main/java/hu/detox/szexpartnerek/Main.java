@@ -153,6 +153,9 @@ public class Main implements Callable<Integer>, AutoCloseable {
                             }
                         } else {
                             ln = serde.nextStr();
+                            if (engine instanceof TrafoEngine.Filteres tf) {
+                                if (serde.isListMode() && tf.skips(ln)) continue;
+                            }
                         }
                         if (ln == null) {
                             cont = false;

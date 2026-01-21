@@ -310,6 +310,7 @@ public class UserReview extends Mapper {
         Document soup = Jsoup.parse(s);
         String[] sels = selectors();
         Element hel = soup.selectFirst("div#beszamoloHeaderDiv");
+        if (hel == null) return null;
         Matcher m = MODEP.matcher(hel.text());
         Elements chds = hel.children();
         int key = IntStream.range(0, chds.size())

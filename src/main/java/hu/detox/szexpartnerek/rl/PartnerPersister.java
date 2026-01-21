@@ -30,7 +30,7 @@ public class PartnerPersister implements Persister, Flushable {
         Connection conn = Main.APP.getConn();
 
         this.partnerStmt = conn.prepareStatement("INSERT INTO partner (\n" +
-                "    id, call_number, name, pass, about, active_info, expect, age, height, weight, breast, waist, hips, city, location_extra, latitude, longitude, looking_age_min, looking_age_max\n" +
+                "    id, call_number, name, pass, about, active_info, expect, age, height, weight, breast, waist, hips, location, location_extra, latitude, longitude, looking_age_min, looking_age_max\n" +
                 ") VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)\n" +
                 "ON CONFLICT(id) DO UPDATE SET\n" +
                 "    call_number = CASE WHEN excluded.call_number IS NOT NULL THEN excluded.call_number ELSE partner.call_number END,\n" +
@@ -45,7 +45,7 @@ public class PartnerPersister implements Persister, Flushable {
                 "    breast = excluded.breast,\n" +
                 "    waist = excluded.waist,\n" +
                 "    hips = excluded.hips,\n" +
-                "    city = excluded.city,\n" +
+                "    location = CASE WHEN excluded.location IS NOT NULL THEN excluded.location ELSE partner.location END,\n" +
                 "    location_extra = excluded.location_extra,\n" +
                 "    latitude = excluded.latitude,\n" +
                 "    longitude = excluded.longitude,\n" +
