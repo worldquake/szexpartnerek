@@ -166,7 +166,7 @@ public class Main implements Callable<Integer>, AutoCloseable {
                             }
                         } else {
                             ln = serde.nextStr();
-                            if (engine instanceof ITrafoEngine.Filteres tf) {
+                            if (ln != null && engine instanceof ITrafoEngine.Filteres tf) {
                                 if (serde.isListMode() && tf.skips(ln)) continue;
                             }
                         }

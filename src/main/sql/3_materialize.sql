@@ -244,7 +244,7 @@ SELECT p.*,
                    ELSE NULL
                    END
        )                                                        AS client_type
-FROM partner p;
+FROM partner p where p.id > 0;
 
 CREATE VIEW partner_ext_view AS
 SELECT p.*,
@@ -339,7 +339,8 @@ SELECT u.*,
         ORDER BY upfv.ts DESC
         LIMIT 1) AS location
 FROM user u
-         LEFT JOIN user_likes_view ulv ON u.id = ulv.user_id;
+         LEFT JOIN user_likes_view ulv ON u.id = ulv.user_id
+WHERE u.id > 0;
 
 PRAGMA foreign_keys = ON;
 
