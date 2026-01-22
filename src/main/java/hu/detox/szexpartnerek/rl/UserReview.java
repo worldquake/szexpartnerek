@@ -193,7 +193,7 @@ public class UserReview extends Mapper {
 
         // Finding the partner "name" and all data we can usee about the partner
         Element a = elem.selectFirst(sel[1]);
-        String name = Partner.cleanName(Utils.text(a));
+        String name = Utils.normalize(Utils.text(a));
         if (name != null) ret.put("name", name);
         Element extra = partnerId(ret, elem);
         if (extra != null) {

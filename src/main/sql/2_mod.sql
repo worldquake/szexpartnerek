@@ -1,3 +1,12 @@
+PRAGMA foreign_keys = ON;
+
+-- Data cleanups
+UPDATE user_partner_feedback
+SET partner_id = 0,
+    name       = NULL
+WHERE name GLOB 'DEL_[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]_[0-9][0-9]_[0-9][0-9]'
+   OR name = 'Törölt_Adatlap';
+
 -- Make the NALAM/NALAD consistent
 INSERT OR IGNORE INTO partner_prop (partner_id, enum_id)
 SELECT pp1.partner_id, (SELECT id FROM int_enum WHERE type = 'properties' AND name = 'NALAM_NALAD')

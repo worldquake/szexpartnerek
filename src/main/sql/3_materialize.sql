@@ -313,7 +313,7 @@ DROP TABLE IF EXISTS user_likes;
 CREATE TABLE user_likes
 (
     user_id INTEGER NOT NULL REFERENCES user (id),
-    like_id TINYINT NOT NULL REFERENCES int_enum (id),
+    like_id TINYINT NOT NULL,
     PRIMARY KEY (user_id, like_id)
 );
 INSERT INTO user_likes (user_id, like_id)
@@ -339,3 +339,5 @@ SELECT u.*,
         LIMIT 1) AS location
 FROM user u
          LEFT JOIN user_likes_view ulv ON u.id = ulv.user_id;
+
+PRAGMA foreign_key_check;

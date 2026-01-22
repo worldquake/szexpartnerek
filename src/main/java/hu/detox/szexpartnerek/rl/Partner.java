@@ -44,12 +44,6 @@ public class Partner extends Mapper {
     private Map<String, String> looking;
     private Map<String, String> massageReverse = new HashMap<>();
 
-    public static String cleanName(String name) {
-        name = Utils.normalize(name);
-        if (name != null && !"Törölt_Adatlap".equals(name)) name = null;
-        return name;
-    }
-
     private Partner() {
         super("src/main/resources/prop-mapping.kv");
         try {

@@ -27,7 +27,7 @@ public class User implements TrafoEngine, TrafoEngine.Filteres {
     public static final String IDR = "user_id";
     public static final User INSTANCE = new User();
     private static final TrafoEngine[] SUB = new TrafoEngine[]{UserReview.INSTANCE};
-    private transient Collection<String> idList;
+    private transient Collection<String> idList = List.of();
     private transient UserPersister persister;
     private Map<String, String> propMapping;
 
@@ -182,6 +182,6 @@ public class User implements TrafoEngine, TrafoEngine.Filteres {
 
     @Override
     public boolean skips(String in) {
-        return this.idList.contains(in);
+        return in == null || this.idList.contains(in);
     }
 }

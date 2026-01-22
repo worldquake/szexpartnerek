@@ -2,21 +2,29 @@
 DROP VIEW IF EXISTS partner_view;
 DROP VIEW IF EXISTS user_partner_feedback_view;
 
--- Drop triggers first
+-- Drop triggers
 DROP TRIGGER IF EXISTS update_user_ingestion_date;
 DROP TRIGGER IF EXISTS update_partner_ingestion_date;
-DROP TRIGGER IF EXISTS partner_phone_prop_enum_type_check;
-DROP TRIGGER IF EXISTS partner_prop_enum_type_check;
-DROP TRIGGER IF EXISTS partner_answer_enum_type_check;
-DROP TRIGGER IF EXISTS partner_looking_enum_type_check;
-DROP TRIGGER IF EXISTS partner_massage_enum_type_check;
-DROP TRIGGER IF EXISTS partner_like_enum_type_check;
-
-
-DROP TRIGGER IF EXISTS upfb_rating_enum_check;
-DROP TRIGGER IF EXISTS upfb_gb_enum_check;
-DROP TRIGGER IF EXISTS upfb_enum_check;
-DROP TRIGGER IF EXISTS upfb_details_enum_check;
+DROP TRIGGER IF EXISTS ppropetchk_insert;
+DROP TRIGGER IF EXISTS ppropetchk_update;
+DROP TRIGGER IF EXISTS paetchk_insert;
+DROP TRIGGER IF EXISTS paetchk_update;
+DROP TRIGGER IF EXISTS plooketchk_insert;
+DROP TRIGGER IF EXISTS plooketchk_update;
+DROP TRIGGER IF EXISTS pmassetchk_insert;
+DROP TRIGGER IF EXISTS pmassetchk_update;
+DROP TRIGGER IF EXISTS plikeetchk_insert;
+DROP TRIGGER IF EXISTS plikeetchk_update;
+DROP TRIGGER IF EXISTS pphonepetchk_insert;
+DROP TRIGGER IF EXISTS pphonepetchk_update;
+DROP TRIGGER IF EXISTS upfbechk_insert;
+DROP TRIGGER IF EXISTS upfbechk_update;
+DROP TRIGGER IF EXISTS upfb_ratingechk_insert;
+DROP TRIGGER IF EXISTS upfb_ratingechk_update;
+DROP TRIGGER IF EXISTS upfb_gbechk_insert;
+DROP TRIGGER IF EXISTS upfb_gbechk_update;
+DROP TRIGGER IF EXISTS upfb_detailsechk_insert;
+DROP TRIGGER IF EXISTS upfb_detailsechk_update;
 
 -- Drop tables (children first, then parents)
 DROP TABLE IF EXISTS user_partner_feedback;

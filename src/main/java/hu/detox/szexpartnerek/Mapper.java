@@ -67,7 +67,7 @@ public abstract class Mapper implements TrafoEngine, Flushable {
         try {
             Connection conn = Main.APP.getConn();
             this.enumDel = conn.prepareStatement("DELETE FROM int_enum");
-            this.enumAdd = conn.prepareStatement("INSERT INTO int_enum (id, parentid, type, name) VALUES (?, NULL, ?, ?)");
+            this.enumAdd = conn.prepareStatement("INSERT INTO int_enum (id, type, name) VALUES (?, ?, ?)");
             this.enumCount = conn.prepareStatement("SELECT count(*) FROM int_enum");
             try (ResultSet rs = enumCount.executeQuery()) {
                 int enums = -1;

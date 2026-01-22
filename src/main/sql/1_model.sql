@@ -4,7 +4,6 @@ PRAGMA foreign_keys = ON;
 CREATE TABLE int_enum
 (
     id       TINYINT NOT NULL,
-    parentid TINYINT REFERENCES int_enum (id) ON DELETE SET NULL,
     type     TEXT    NOT NULL, -- e.g. 'properties', 'likes', 'looking', 'massage', 'answers'
     name     TEXT    NOT NULL,
     PRIMARY KEY (id, type)
@@ -23,6 +22,8 @@ CREATE TABLE user
     regd   DATE,
     ts     DATETIME DEFAULT CURRENT_TIMESTAMP
 );
+INSERT INTO user
+VALUES (0, 'Törölt', null, null, null, null, null, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
 CREATE TRIGGER update_user_ingestion_date
     AFTER UPDATE
     ON user
@@ -60,6 +61,8 @@ CREATE TABLE partner
     looking_age_max SMALLINT,
     ts              DATETIME DEFAULT CURRENT_TIMESTAMP
 );
+INSERT INTO partner(id, name, active_info)
+VALUES (0, 'Törölt', 'false');
 
 CREATE TRIGGER update_partner_ingestion_date
     AFTER UPDATE
@@ -72,7 +75,7 @@ END;
 CREATE TABLE partner_phone_prop
 (
     partner_id INTEGER NOT NULL REFERENCES partner (id) ON DELETE CASCADE,
-    enum_id    TINYINT NOT NULL REFERENCES int_enum (id) ON DELETE CASCADE,
+    enum_id    TINYINT NOT NULL,
     PRIMARY KEY (partner_id, enum_id)
 );
 
@@ -81,7 +84,7 @@ CREATE TABLE partner_phone_prop
 CREATE TABLE partner_prop
 (
     partner_id INTEGER NOT NULL REFERENCES partner (id) ON DELETE CASCADE,
-    enum_id    TINYINT NOT NULL REFERENCES int_enum (id) ON DELETE CASCADE,
+    enum_id    TINYINT NOT NULL,
     PRIMARY KEY (partner_id, enum_id)
 );
 
@@ -107,7 +110,7 @@ CREATE TABLE partner_answer
 (
     id         INTEGER PRIMARY KEY,
     partner_id INTEGER NOT NULL REFERENCES partner (id) ON DELETE CASCADE,
-    enum_id    TINYINT NOT NULL REFERENCES int_enum (id) ON DELETE CASCADE,
+    enum_id    TINYINT NOT NULL,
     answer     TEXT    NOT NULL
 );
 
@@ -115,7 +118,7 @@ CREATE TABLE partner_answer
 CREATE TABLE partner_looking
 (
     partner_id INTEGER NOT NULL REFERENCES partner (id) ON DELETE CASCADE,
-    enum_id    TINYINT NOT NULL REFERENCES int_enum (id) ON DELETE CASCADE,
+    enum_id    TINYINT NOT NULL,
     PRIMARY KEY (partner_id, enum_id)
 );
 
@@ -123,16 +126,15 @@ CREATE TABLE partner_looking
 CREATE TABLE partner_massage
 (
     partner_id INTEGER NOT NULL REFERENCES partner (id) ON DELETE CASCADE,
-    enum_id    TINYINT NOT NULL REFERENCES int_enum (id) ON DELETE CASCADE,
+    enum_id    TINYINT NOT NULL,
     PRIMARY KEY (partner_id, enum_id)
 );
-
 
 -- Likes table: links partner to int_enum (likes) with status (no, yes, ask)
 CREATE TABLE partner_like
 (
     partner_id INTEGER NOT NULL REFERENCES partner (id) ON DELETE CASCADE,
-    enum_id    TINYINT NOT NULL REFERENCES int_enum (id) ON DELETE CASCADE,
+    enum_id    TINYINT NOT NULL,
     option     TEXT    NOT NULL CHECK (option IN ('no', 'yes', 'ask')),
     PRIMARY KEY (partner_id, enum_id)
 );
@@ -156,62 +158,116 @@ CREATE TABLE partner_activity
     description TEXT    NOT NULL
 );
 
-CREATE TRIGGER partner_prop_enum_type_check
-    BEFORE INSERT
-    ON partner_prop
+-- partner_prop: type = 'properties'
+CREATE TRIGGER ppropetchk_insert
+    BEFORE INSERT ON partner_prop
     FOR EACH ROW
 BEGIN
-    SELECT CASE
-               WHEN (SELECT count(*) FROM int_enum WHERE id = NEW.enum_id AND type = 'properties') != 1
-                   THEN RAISE(ABORT, 'partner_prop: attempted to insert enum_id not found or not unique for type=props')
-               END;
+    SELECT RAISE(ABORT, 'partner_prop: attempted to insert enum_id not found or not unique for type=properties')
+    WHERE (SELECT COUNT(*) FROM int_enum WHERE id = NEW.enum_id AND type = 'properties') != 1;
+END;
+CREATE TRIGGER ppropetchk_update
+    BEFORE UPDATE ON partner_prop
+    FOR EACH ROW
+BEGIN
+    SELECT RAISE(ABORT, 'partner_prop: attempted to update enum_id not found or not unique for type=properties')
+    WHERE (SELECT COUNT(*) FROM int_enum WHERE id = NEW.enum_id AND type = 'properties') != 1;
 END;
 
-CREATE TRIGGER partner_answer_enum_type_check
-    BEFORE INSERT
-    ON partner_answer
+-- partner_answer: type = 'answers'
+CREATE TRIGGER paetchk_insert
+    BEFORE INSERT ON partner_answer
     FOR EACH ROW
 BEGIN
-    SELECT CASE
-               WHEN (SELECT count(*) FROM int_enum WHERE id = NEW.enum_id AND type = 'answers') != 1
-                   THEN RAISE(ABORT,
-                              'partner_answer: attempted to insert enum_id not found or not unique for type=answers')
-               END;
+    SELECT RAISE(ABORT, 'partner_answer: attempted to insert enum_id not found or not unique for type=answers')
+    WHERE (SELECT COUNT(*) FROM int_enum WHERE id = NEW.enum_id AND type = 'answers') != 1;
+END;
+CREATE TRIGGER paetchk_update
+    BEFORE UPDATE ON partner_answer
+    FOR EACH ROW
+BEGIN
+    SELECT RAISE(ABORT, 'partner_answer: attempted to update enum_id not found or not unique for type=answers')
+    WHERE (SELECT COUNT(*) FROM int_enum WHERE id = NEW.enum_id AND type = 'answers') != 1;
 END;
 
-CREATE TRIGGER partner_looking_enum_type_check
-    BEFORE INSERT
-    ON partner_looking
+-- partner_looking: type = 'looking'
+CREATE TRIGGER plooketchk_insert
+    BEFORE INSERT ON partner_looking
     FOR EACH ROW
 BEGIN
-    SELECT CASE
-               WHEN (SELECT count(*) FROM int_enum WHERE id = NEW.enum_id AND type = 'looking') != 1
-                   THEN RAISE(ABORT,
-                              'partner_looking: attempted to insert enum_id not found or not unique for type=looking')
-               END;
+    SELECT RAISE(ABORT, 'partner_looking: attempted to insert enum_id not found or not unique for type=looking')
+    WHERE (SELECT COUNT(*) FROM int_enum WHERE id = NEW.enum_id AND type = 'looking') != 1;
+END;
+CREATE TRIGGER plooketchk_update
+    BEFORE UPDATE ON partner_looking
+    FOR EACH ROW
+BEGIN
+    SELECT RAISE(ABORT, 'partner_looking: attempted to update enum_id not found or not unique for type=looking')
+    WHERE (SELECT COUNT(*) FROM int_enum WHERE id = NEW.enum_id AND type = 'looking') != 1;
 END;
 
-CREATE TRIGGER partner_massage_enum_type_check
-    BEFORE INSERT
-    ON partner_massage
+-- partner_massage: type = 'massage'
+CREATE TRIGGER pmassetchk_insert
+    BEFORE INSERT ON partner_massage
     FOR EACH ROW
 BEGIN
-    SELECT CASE
-               WHEN (SELECT count(*) FROM int_enum WHERE id = NEW.enum_id AND type = 'massage') != 1
-                   THEN RAISE(ABORT,
-                              'partner_massage: attempted to insert enum_id not found or not unique for type=massage')
-               END;
+    SELECT RAISE(ABORT, 'partner_massage: attempted to insert enum_id not found or not unique for type=massage')
+    WHERE (SELECT COUNT(*) FROM int_enum WHERE id = NEW.enum_id AND type = 'massage') != 1;
+END;
+CREATE TRIGGER pmassetchk_update
+    BEFORE UPDATE ON partner_massage
+    FOR EACH ROW
+BEGIN
+    SELECT RAISE(ABORT, 'partner_massage: attempted to update enum_id not found or not unique for type=massage')
+    WHERE (SELECT COUNT(*) FROM int_enum WHERE id = NEW.enum_id AND type = 'massage') != 1;
 END;
 
-CREATE TRIGGER partner_like_enum_type_check
-    BEFORE INSERT
-    ON partner_like
+-- partner_like: type = 'likes'
+CREATE TRIGGER plikeetchk_insert
+    BEFORE INSERT ON partner_like
     FOR EACH ROW
 BEGIN
-    SELECT CASE
-               WHEN (SELECT count(*) FROM int_enum WHERE id = NEW.enum_id AND type = 'likes') != 1
-                   THEN RAISE(ABORT, 'partner_like: attempted to insert enum_id not found or not unique for type=likes')
-               END;
+    SELECT RAISE(ABORT, 'partner_like: attempted to insert enum_id not found or not unique for type=likes')
+    WHERE (SELECT COUNT(*) FROM int_enum WHERE id = NEW.enum_id AND type = 'likes') != 1;
+END;
+CREATE TRIGGER plikeetchk_update
+    BEFORE UPDATE ON partner_like
+    FOR EACH ROW
+BEGIN
+    SELECT RAISE(ABORT, 'partner_like: attempted to update enum_id not found or not unique for type=likes')
+    WHERE (SELECT COUNT(*) FROM int_enum WHERE id = NEW.enum_id AND type = 'likes') != 1;
+END;
+
+-- partner_phone_prop: type = 'properties'
+CREATE TRIGGER pphonepetchk_insert
+    BEFORE INSERT ON partner_phone_prop
+    FOR EACH ROW
+BEGIN
+    SELECT RAISE(ABORT, 'partner_phone_prop: attempted to insert enum_id not found or not unique for type=properties')
+    WHERE (SELECT COUNT(*) FROM int_enum WHERE id = NEW.enum_id AND type = 'properties') != 1;
+END;
+CREATE TRIGGER pphonepetchk_update
+    BEFORE UPDATE ON partner_phone_prop
+    FOR EACH ROW
+BEGIN
+    SELECT RAISE(ABORT, 'partner_phone_prop: attempted to update enum_id not found or not unique for type=properties')
+    WHERE (SELECT COUNT(*) FROM int_enum WHERE id = NEW.enum_id AND type = 'properties') != 1;
+END;
+
+-- user_partner_feedback: type = 'fbtype'
+CREATE TRIGGER upfbechk_insert
+    BEFORE INSERT ON user_partner_feedback
+    FOR EACH ROW
+BEGIN
+    SELECT RAISE(ABORT, 'user_partner_feedback: attempted to insert enum_id not found or not unique for type=fbtype')
+    WHERE (SELECT COUNT(*) FROM int_enum WHERE id = NEW.enum_id AND type = 'fbtype') != 1;
+END;
+CREATE TRIGGER upfbechk_update
+    BEFORE UPDATE ON user_partner_feedback
+    FOR EACH ROW
+BEGIN
+    SELECT RAISE(ABORT, 'user_partner_feedback: attempted to update enum_id not found or not unique for type=fbtype')
+    WHERE (SELECT COUNT(*) FROM int_enum WHERE id = NEW.enum_id AND type = 'fbtype') != 1;
 END;
 
 CREATE TABLE IF NOT EXISTS partner_list
@@ -259,29 +315,16 @@ FROM partner p;
 -- Feedback tables
 CREATE TABLE user_partner_feedback
 (
-    id         INTEGER,
+    id         INTEGER PRIMARY KEY,
     user_id    INTEGER  NOT NULL REFERENCES user (id) ON DELETE CASCADE,
-    enum_id    INTEGER  NOT NULL REFERENCES int_enum (id) ON DELETE CASCADE,
+    enum_id    INTEGER  NOT NULL,
     partner_id INTEGER REFERENCES partner (id) ON DELETE CASCADE,
     name       TEXT,
     age        TINYINT,
     after_name TEXT,
     useful     INTEGER  NOT NULL,
-    ts         DATETIME NOT NULL,
-    PRIMARY KEY (id, user_id)
+    ts         DATETIME NOT NULL
 );
-CREATE TRIGGER upfb_enum_check
-    BEFORE INSERT
-    ON user_partner_feedback
-    FOR EACH ROW
-BEGIN
-    SELECT CASE
-               WHEN (SELECT count(*) FROM int_enum WHERE id = NEW.enum_id AND type = 'fbtype') != 1
-                   THEN RAISE(ABORT,
-                              'user_partner_feedback: attempted to insert enum_id not found or not unique for type=fbtype')
-               END;
-END;
-
 CREATE TABLE user_partner_feedback_rating
 (
     fbid    INTEGER NOT NULL REFERENCES user_partner_feedback (id) ON DELETE CASCADE,
@@ -289,55 +332,69 @@ CREATE TABLE user_partner_feedback_rating
     val     TINYINT,          -- nullable
     PRIMARY KEY (fbid, enum_id)
 );
-CREATE TRIGGER upfb_rating_enum_check
-    BEFORE INSERT
-    ON user_partner_feedback_rating
-    FOR EACH ROW
-BEGIN
-    SELECT CASE
-               WHEN (SELECT count(*) FROM int_enum WHERE id = NEW.enum_id AND type = 'fbrtype') != 1
-                   THEN RAISE(ABORT,
-                              'user_partner_feedback_rating: attempted to insert enum_id not found or not unique for type=fbrtype')
-               END;
-END;
-
 
 CREATE TABLE user_partner_feedback_gb
 (
     fbid    INTEGER NOT NULL REFERENCES user_partner_feedback (id) ON DELETE CASCADE,
-    bad     BOOLEAN NOT NULL, -- true for bad, false for good
     enum_id INTEGER NOT NULL, -- references int_enum(id) where int_enum.type='fbgbtype'
-    PRIMARY KEY (fbid, bad, enum_id)
+    bad     BOOLEAN NOT NULL, -- true for bad, false for good
+    PRIMARY KEY (fbid, enum_id)
 );
-CREATE TRIGGER upfb_gb_enum_check
-    BEFORE INSERT
-    ON user_partner_feedback_gb
-    FOR EACH ROW
-BEGIN
-    SELECT CASE
-               WHEN (SELECT count(*) FROM int_enum WHERE id = NEW.enum_id AND type = 'fbgbtype') != 1
-                   THEN RAISE(ABORT,
-                              'user_partner_feedback_gb: attempted to insert enum_id not found or not unique for type=fbgbtype')
-               END;
-END;
 
 CREATE TABLE user_partner_feedback_details
 (
     fbid    INTEGER NOT NULL REFERENCES user_partner_feedback (id) ON DELETE CASCADE,
-    enum_id INTEGER NOT NULL, -- references int_enum(id) where int_enum.type='fbtype'
+    enum_id INTEGER NOT NULL, -- references int_enum(id) where int_enum.type='fbdtype'
     val     TEXT    NOT NULL,
     PRIMARY KEY (fbid, enum_id)
 );
-CREATE TRIGGER upfb_details_enum_check
-    BEFORE INSERT
-    ON user_partner_feedback_details
+
+-- user_partner_feedback_rating: type = 'fbrtype'
+CREATE TRIGGER upfb_ratingechk_insert
+    BEFORE INSERT ON user_partner_feedback_rating
     FOR EACH ROW
 BEGIN
-    SELECT CASE
-               WHEN (SELECT count(*) FROM int_enum WHERE id = NEW.enum_id AND type = 'fbdtype') != 1
-                   THEN RAISE(ABORT,
-                              'user_partner_feedback_details: attempted to insert enum_id not found or not unique for type=fbdtype')
-               END;
+    SELECT RAISE(ABORT, 'user_partner_feedback_rating: attempted to insert enum_id not found or not unique for type=fbrtype')
+    WHERE (SELECT COUNT(*) FROM int_enum WHERE id = NEW.enum_id AND type = 'fbrtype') != 1;
+END;
+CREATE TRIGGER upfb_ratingechk_update
+    BEFORE UPDATE ON user_partner_feedback_rating
+    FOR EACH ROW
+BEGIN
+    SELECT RAISE(ABORT, 'user_partner_feedback_rating: attempted to update enum_id not found or not unique for type=fbrtype')
+    WHERE (SELECT COUNT(*) FROM int_enum WHERE id = NEW.enum_id AND type = 'fbrtype') != 1;
+END;
+
+-- user_partner_feedback_gb: type = 'fbgbtype'
+CREATE TRIGGER upfb_gbechk_insert
+    BEFORE INSERT ON user_partner_feedback_gb
+    FOR EACH ROW
+BEGIN
+    SELECT RAISE(ABORT, 'user_partner_feedback_gb: attempted to insert enum_id not found or not unique for type=fbgbtype')
+    WHERE (SELECT COUNT(*) FROM int_enum WHERE id = NEW.enum_id AND type = 'fbgbtype') != 1;
+END;
+CREATE TRIGGER upfb_gbechk_update
+    BEFORE UPDATE ON user_partner_feedback_gb
+    FOR EACH ROW
+BEGIN
+    SELECT RAISE(ABORT, 'user_partner_feedback_gb: attempted to update enum_id not found or not unique for type=fbgbtype')
+    WHERE (SELECT COUNT(*) FROM int_enum WHERE id = NEW.enum_id AND type = 'fbgbtype') != 1;
+END;
+
+-- user_partner_feedback_details: type = 'fbdtype'
+CREATE TRIGGER upfb_detailsechk_insert
+    BEFORE INSERT ON user_partner_feedback_details
+    FOR EACH ROW
+BEGIN
+    SELECT RAISE(ABORT, 'user_partner_feedback_details: attempted to insert enum_id not found or not unique for type=fbdtype')
+    WHERE (SELECT COUNT(*) FROM int_enum WHERE id = NEW.enum_id AND type = 'fbdtype') != 1;
+END;
+CREATE TRIGGER upfb_detailsechk_update
+    BEFORE UPDATE ON user_partner_feedback_details
+    FOR EACH ROW
+BEGIN
+    SELECT RAISE(ABORT, 'user_partner_feedback_details: attempted to update enum_id not found or not unique for type=fbdtype')
+    WHERE (SELECT COUNT(*) FROM int_enum WHERE id = NEW.enum_id AND type = 'fbdtype') != 1;
 END;
 
 CREATE VIEW user_partner_feedback_view AS
@@ -432,4 +489,5 @@ FROM user_partner_feedback fb
          LEFT JOIN gb_counts gc ON fb.id = gc.id
          LEFT JOIN important_props ip ON fb.id = ip.id
          JOIN max_props mp
-WHERE rt.rating IS NOT NULL;
+WHERE rt.rating IS NOT NULL
+  AND fb.partner_id > 0;

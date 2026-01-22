@@ -30,7 +30,8 @@ public class UserReviewPersister implements Persister, Flushable {
         );
         feedbackStmt = conn.prepareStatement(
                 "INSERT INTO user_partner_feedback (id, " + User.IDR + ", " + Partner.IDR + ", " + Persister.ENUM_IDR + ", name, after_name, useful, age, ts) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?) " +
-                        "ON CONFLICT(id, " + User.IDR + ") DO UPDATE SET " +
+                        "ON CONFLICT(id) DO UPDATE SET " +
+                        User.IDR + " = COALESCE(user_partner_feedback." + User.IDR + ", excluded." + User.IDR + "), " +
                         Partner.IDR + " = COALESCE(user_partner_feedback." + Partner.IDR + ", excluded." + Partner.IDR + "), " +
                         Persister.ENUM_IDR + " = COALESCE(user_partner_feedback." + Persister.ENUM_IDR + ", excluded." + Persister.ENUM_IDR + "), " +
                         "name = excluded.name, after_name = excluded.after_name, " +
@@ -43,8 +44,8 @@ public class UserReviewPersister implements Persister, Flushable {
                         "ON CONFLICT(fbid, " + Persister.ENUM_IDR + ") DO UPDATE SET val=excluded.val"
         );
         gbStmt = conn.prepareStatement(
-                "INSERT INTO user_partner_feedback_gb (fbid, bad, " + Persister.ENUM_IDR + ") VALUES (?, ?, ?) " +
-                        "ON CONFLICT(fbid, bad, " + Persister.ENUM_IDR + ") DO NOTHING"
+                "INSERT INTO user_partner_feedback_gb (fbid, " + Persister.ENUM_IDR + ", bad) VALUES (?, ?, ?) " +
+                        "ON CONFLICT(fbid, " + Persister.ENUM_IDR + ") DO NOTHING"
         );
         detailsStmt = conn.prepareStatement(
                 "INSERT INTO user_partner_feedback_details (fbid, " + Persister.ENUM_IDR + ", val) VALUES (?, ?, ?) " +
@@ -85,29 +86,20 @@ public class UserReviewPersister implements Persister, Flushable {
                 }
             }
         }
-
         // Insert good/bad
-        JsonNode good = item.get("good");
-        if (good != null && good.isArray()) {
-            for (JsonNode valNode : good) {
-                gbStmt.setInt(1, fbid);
-                gbStmt.setBoolean(2, false);
-                gbStmt.setInt(3, valNode.intValue());
-                gbStmt.addBatch();
-                batch++;
+        for (String key : new String[]{"good", "bad"}) {
+            JsonNode arr = item.get(key);
+            if (arr != null && arr.isArray()) {
+                boolean isBad = key.equals("bad");
+                for (JsonNode valNode : arr) {
+                    gbStmt.setInt(1, fbid);
+                    gbStmt.setInt(2, valNode.intValue());
+                    gbStmt.setBoolean(3, isBad);
+                    gbStmt.addBatch();
+                    batch++;
+                }
             }
         }
-        JsonNode bad = item.get("bad");
-        if (bad != null && bad.isArray()) {
-            for (JsonNode valNode : bad) {
-                gbStmt.setInt(1, fbid);
-                gbStmt.setBoolean(2, true);
-                gbStmt.setInt(3, valNode.intValue());
-                gbStmt.addBatch();
-                batch++;
-            }
-        }
-
         // Insert details
         JsonNode details = item.get("details");
         if (details != null && details.isObject()) {
