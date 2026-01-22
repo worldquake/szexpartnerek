@@ -1,4 +1,4 @@
-PRAGMA foreign_keys = ON;
+PRAGMA foreign_keys = OFF;
 
 -- Data cleanups
 UPDATE user_partner_feedback
@@ -120,3 +120,4 @@ WHERE enum_id IN (SELECT id
   AND partner_id IN (SELECT partner_id
                      FROM partner_like
                      WHERE enum_id = (SELECT id FROM int_enum WHERE type = 'likes' AND name = 'CSAK_WEBCAM_SZEX'));
+PRAGMA foreign_keys = ON;

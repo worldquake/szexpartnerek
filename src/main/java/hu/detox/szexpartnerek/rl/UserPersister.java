@@ -43,7 +43,7 @@ public class UserPersister implements Persister, Flushable {
     public Set<String> getUntouchableIds() throws SQLException {
         HashSet<String> toProcess = new HashSet<>();
         String untouchedSql = "SELECT id FROM user WHERE ts < datetime('now', '-1 day')";
-        ResultSet rs = Main.APP.getConn().createStatement().executeQuery(untouchedSql);
+        ResultSet rs = Main.APP.getStmt().executeQuery(untouchedSql);
         while (rs.next()) {
             while (rs.next()) {
                 toProcess.add(rs.getString(1));

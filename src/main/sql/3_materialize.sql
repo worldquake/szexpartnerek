@@ -1,3 +1,4 @@
+PRAGMA foreign_keys = OFF;
 -- Partner related extensions
 DROP VIEW IF EXISTS partner_ext_view;
 DROP TABLE IF EXISTS partner_ext;
@@ -339,5 +340,7 @@ SELECT u.*,
         LIMIT 1) AS location
 FROM user u
          LEFT JOIN user_likes_view ulv ON u.id = ulv.user_id;
+
+PRAGMA foreign_keys = ON;
 
 PRAGMA foreign_key_check;

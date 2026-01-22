@@ -27,6 +27,7 @@ import java.util.stream.IntStream;
 
 public class UserReview extends Mapper {
     public static final UserReview INSTANCE = new UserReview();
+    private static final TrafoEngine[] PRE = new TrafoEngine[]{Partner.INSTANCE};
     public static final Pattern P_AGE = Pattern.compile("\\(([0-9]+)\\|");
     private static String[] SMODES = "accepted received questioned hidden".split(" ");
     private static String[] RATES = "Környezet Külső Hozzáállás Technika Összkép".split(" ");
@@ -76,8 +77,8 @@ public class UserReview extends Mapper {
     }
 
     @Override
-    public TrafoEngine[] subTrafos() {
-        return null;
+    public TrafoEngine[] preTrafos() {
+        return PRE;
     }
 
     @Override

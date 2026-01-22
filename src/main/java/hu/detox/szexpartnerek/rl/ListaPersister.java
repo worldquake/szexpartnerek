@@ -21,9 +21,9 @@ public class ListaPersister implements Persister, Flushable {
     public ListaPersister() throws SQLException, IOException {
         Connection conn = Main.APP.getConn();
         map = Utils.map("src/main/resources/list-mapping.kv");
-        conn.createStatement().executeUpdate("DELETE FROM partner_list");
+        Main.APP.getStmt().executeUpdate("DELETE FROM partner_list");
         // Delete from partner_prop for dynamic lists
-        conn.createStatement().executeUpdate(
+        Main.APP.getStmt().executeUpdate(
                 "DELETE FROM partner_prop " +
                         "WHERE " + Persister.ENUM_IDR + " IN (SELECT id FROM int_enum WHERE type = 'properties' AND name IN ('AJANLOTT', 'BARATNOVEL'))"
         );
@@ -64,7 +64,7 @@ public class ListaPersister implements Persister, Flushable {
     public void close() throws SQLException, IOException {
         flush();
         // Insert or ignore into partner_prop based on lists
-        partnerListStmt.getConnection().createStatement().executeUpdate(
+        Main.APP.getStmt().executeUpdate(
                 "INSERT OR IGNORE INTO partner_prop (" + Partner.IDR + ", " + Persister.ENUM_IDR + ") " +
                         "SELECT pl.id, ie.id " +
                         "FROM partner_list pl " +

@@ -14,6 +14,7 @@ import java.io.IOException;
 import java.net.URL;
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -27,10 +28,13 @@ public class Main implements Callable<Integer>, AutoCloseable {
     private static Db DB = new Db(new File("target/data/db.sqlite3"));
     private transient Set<AutoCloseable> closeables = new HashSet<>();
     private transient Connection connection;
+    private transient Statement stmt;
 
     public static void main(String[] args) throws Exception {
         try {
             APP.connection = DB.getConnection();
+            APP.stmt = APP.connection.createStatement();
+            APP.stmt.execute("PRAGMA foreign_keys = ON");
             Integer result = APP.call();
             System.out.println(result == null ? 0 : result);
         } finally {
@@ -40,6 +44,10 @@ public class Main implements Callable<Integer>, AutoCloseable {
 
     public Connection getConn() {
         return connection;
+    }
+
+    public Statement getStmt() {
+        return stmt;
     }
 
     private void test(Function<String, ?> trafo) throws IOException {

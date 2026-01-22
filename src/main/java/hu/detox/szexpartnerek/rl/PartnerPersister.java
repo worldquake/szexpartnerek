@@ -64,7 +64,7 @@ public class PartnerPersister implements Persister, Flushable {
     }
 
     public void loadAllIds(Set<String> ids) throws SQLException {
-        try (ResultSet rs = phonePropStmt.getConnection().createStatement().executeQuery("SELECT id FROM partner WHERE ts > datetime('now', '-1 day')")) {
+        try (ResultSet rs = Main.APP.getStmt().executeQuery("SELECT id FROM partner WHERE ts > datetime('now', '-1 day')")) {
             while (rs.next()) {
                 ids.add(rs.getString(1));
             }
